@@ -1,0 +1,334 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+	<meta charset="utf-8">
+	<meta name="description" content="">
+	<meta name="author" content="">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+	<title>PointCloud Viewer</title>
+
+	<link rel="stylesheet" type="text/css" href="../build/potree/potree.css">
+	<link rel="stylesheet" type="text/css" href="../libs/jquery-ui/jquery-ui.min.css">
+	<link rel="stylesheet" type="text/css" href="../libs/perfect-scrollbar/css/perfect-scrollbar.css">
+	<link rel="stylesheet" href="../libs/openlayers3/ol.css" type="text/css">
+	<link rel="stylesheet" href="../libs/spectrum/spectrum.css" type="text/css">
+	<style>
+		.btn-back {
+			width: 60px;
+			position: relative;
+			top: 46px;
+			left: 10px;
+			z-index: 10;
+			background: transparent;
+			border: none;
+			cursor: pointer;
+		}
+
+		img {
+			width: 100%;
+		}
+
+		#potree_toolbar {
+			position: absolute;
+			z-index: 10000;
+			right: 0;
+			top: 0px;
+			background: #3C5055;
+			color: white;
+			padding: 0.3em 0.8em;
+			font-family: "system-ui";
+			border-radius: 0em 0em 0.3em 0.3em;
+			display: flex;
+		}
+
+		@media (min-width: 737px) {
+			#potree_toolbar {
+				transform: translateX(-50%);
+				left: 50%;
+				right: auto;
+			}
+		}
+
+		.potree_toolbar_label {
+			text-align: center;
+			font-size: smaller;
+			opacity: 0.9;
+		}
+
+		.potree_toolbar_separator {
+			background: white;
+			padding: 0px;
+			margin: 5px 10px;
+			width: 1px;
+		}
+	</style>
+</head>
+
+<body>
+	<script src="../libs/jquery/jquery-3.1.1.js"></script>
+	<script src="../libs/spectrum/spectrum.js"></script>
+	
+	<script src="../libs/perfect-scrollbar/js/perfect-scrollbar.jquery.js"></script>
+	<script src="../libs/jquery-ui/jquery-ui.min.js"></script>
+	<script src="../libs/three.js/build/three.js"></script>
+	<script src="../libs/other/stats.min.js"></script>
+	<script src="../libs/other/BinaryHeap.js"></script>
+	<script src="../libs/tween/tween.min.js"></script>
+	<script src="../libs/d3/d3.js"></script>
+	<script src="../libs/proj4/proj4.js"></script>
+	<script src="../libs/openlayers3/ol.js"></script>
+    <script src="../libs/i18next/i18next.js"></script>
+	
+	<script src="../build/potree/potree.js"></script>
+	<!--<script src="../src/viewer/sidebar.js"></script>-->
+	
+	<!-- INCLUDE ADDITIONAL DEPENDENCIES HERE -->
+	<!-- INCLUDE SETTINGS HERE -->
+	
+	<script src="../libs/plasio/js/laslaz.js"></script>
+	<script src="../libs/plasio/vendor/bluebird.js"></script>
+
+	<div class="potree_container" style="position: absolute; width: 100%; height: 100%; left: 0px; top: 0px; ">
+		<div id="potree_render_area" style="background-image: url('../build/potree/resources/images/background.jpg');">
+			<div id="potree_toolbar"></div>
+		</div>
+		<div id="potree_sidebar_container"> </div>
+	</div>
+
+	<button class="btn btn-back" onclick=ref() type="button" id="backButton">
+		<img class="backArrow" src="../../PANOTOUR/mainScheme/img/left-arrow.png" alt="">
+	</button>
+
+	<script>
+		let level;
+		//defineData4Floor();
+
+		// function defineData4Floor() {
+		// 	var paramsString = window.location.search;
+		// 	var searchParams = new URLSearchParams(paramsString);
+		// 	level = searchParams.get("level");
+		// 	console.log(level);
+		// }
+
+		function ref() {
+			let newRef = '/PANOTOUR/PANOS/mainPointCloud.html' + window.location.search;
+			document.location.href = newRef;
+		}
+
+		window.viewer = new Potree.Viewer(document.getElementById("potree_render_area"));
+		
+		viewer.setFOV(40);
+		viewer.setPointBudget(1000 * 1000* 10);
+		viewer.setEDLEnabled(true);
+		viewer.setEDLStrength(0);
+		//viewer.setEDLOpacity(0.2);
+		viewer.loadSettingsFromURL();
+		// viewer.useHQ = true;
+
+		// viewer.setDescription(`DOLWIN ALPHA ${level.slice(6)}.8`);
+		viewer.setDescription(`DOLWIN ALPHA - st002`);
+
+		viewer.loadGUI(() => {
+			viewer.setLanguage('en');
+			$("#menu_appearance").next().show();
+			// viewer.toggleSidebar();
+		});
+
+		Potree.loadPointCloud(`../pointclouds/Conoco/cloud.js`, level, function (e) {
+			let scene = viewer.scene;
+			scene.addPointCloud(e.pointcloud);
+
+			let material = e.pointcloud.material;
+			material.size = 0.1;
+
+			// this.viewer.setControls(this.viewer.fpControls);
+			// this.viewer.fpControls.lockElevation = false;
+			//CONTROLL
+
+			material.pointSizeType = Potree.PointSizeType.ADAPTIVE;
+			//ADAPTIVE, ATTENUATED, FIXED
+
+			material.shape = Potree.PointShape.CIRCLE;
+			//SQUARE, CIRCLE, PARABOLOID
+
+			// viewer.fitToScreen();
+
+			scene.view.position.set(-44.1870, 57.0310, 27.2240);
+			scene.view.lookAt(-20.1870, 57.0310, 27.2240);
+
+			viewer.fitToScreen();
+
+			//run();
+			
+		});
+
+		async function run(){
+			let images = await Potree.Images360Loader.load("/photo", viewer, {});
+			console.log('images', images);
+			
+			viewer.scene.add360Images(images);
+			viewer.mapView.showSources(false);
+
+			let image360 = images.images[0];//JSON.parse('{"file":"/photo/Conoco5.jpg","time":5,"longitude":-44.187,"latitude":57.031,"altitude":27.224,"course":234.5,"pitch":0,"roll":0,"mesh":{"metadata":{"version":4.5,"type":"Object","generator":"Object3D.toJSON"},"geometries":[{"uuid":"C0EB4EEF-B3A6-4ACA-8D05-C2A34AD97DCC","type":"SphereGeometry","radius":1,"widthSegments":8,"heightSegments":8}],"materials":[{"uuid":"4D2B190E-1FA9-4B9C-9FEB-8E3D5E98268E","type":"MeshBasicMaterial","color":6750054,"side":1,"depthFunc":3,"depthTest":true,"depthWrite":true,"stencilWrite":false,"stencilWriteMask":255,"stencilFunc":519,"stencilRef":0,"stencilFuncMask":255,"stencilFail":7680,"stencilZFail":7680,"stencilZPass":7680}],"object":{"uuid":"72FDCCEB-51B8-442D-88A1-C022F4BA0275","type":"Mesh","layers":1,"matrix":[-0.8141155183563193,-0.5807029557109399,0,0,1.1102230246251565e-16,-2.220446049250313e-16,1,0,-0.5807029557109399,0.8141155183563191,1.1102230246251565e-16,0,-44.187,57.031,27.224,1],"geometry":"C0EB4EEF-B3A6-4ACA-8D05-C2A34AD97DCC","material":"4D2B190E-1FA9-4B9C-9FEB-8E3D5E98268E"}},"position":[-44.187,57.031,27.224]}');
+			
+			images.focus(image360);
+		}
+
+		//------------------------------------------------------------
+		// HTML
+		const elToolbar = $("#potree_toolbar");
+		elToolbar.html(`
+
+		<div class="measure">
+			<div class="potree_toolbar_label">
+				Measure
+			</div>
+			<div>
+				<img name = "height_measurement" src="${Potree.resourcePath}/icons/height.svg" class="annotation-action-icon" title="Height measurement" style="width: 2em; height: auto;"/>				
+
+				<img name="action_measure_point" src="${Potree.resourcePath}/icons/point.svg" class="annotation-action-icon" style="width: 2em; height: auto;"/>
+
+				<img name="action_measure_distance" src="${Potree.resourcePath}/icons/distance.svg" class="annotation-action-icon" style="width: 2em; height: auto;"/>
+
+				<img name="annotation" src="${Potree.resourcePath}/icons/annotation.svg" class="annotation-action-icon" style="width: 2em; height: auto;"/>
+
+				<img name="remove_all_measurement" src="${Potree.resourcePath}/icons/reset_tools.svg" class="annotation-action-icon" style="width: 2em; height: auto;"/>
+			</div>
+		</div>
+
+		<span class="potree_toolbar_separator" />
+
+		<span>
+			<div class="potree_toolbar_label">
+				<span data-i18n="appearance.nb_max_pts">Point Budget</span>: 
+				<span name="lblPointBudget" style="display: inline-block; width: 4em;"></span>
+			</div>
+			<div>
+				<div id="sldPointBudget"></div>
+			</div>
+		</span>
+	`);
+
+		// CONTENT & ACTIONS
+
+		{ // MEASURE
+
+			elToolbar.find("img[name=annotation]").click(() => {
+				$('#menu_measurements').next().slideDown();;
+				let annotation = this.viewer.annotationTool.startInsertion();
+
+				let annotationsRoot = $("#jstree_scene").jstree().get_json("annotations");
+				let jsonNode = annotationsRoot.children.find(child => child.data.uuid === annotation.uuid);
+				$.jstree.reference(jsonNode.id).deselect_all();
+				$.jstree.reference(jsonNode.id).select_node(jsonNode.id);
+			})
+
+
+
+
+			elToolbar.find("img[name=height_measurement]").click(() => {
+				const height_measurement = viewer.measuringTool.startInsertion({
+					showDistances: false,
+					showAngles: false,
+					showCoordinates: true,
+					showArea: false,
+					closed: true,
+					maxMarkers: 1,
+					name: 'Point'
+				});
+			});
+
+			elToolbar.find("img[name=remove_all_measurement]").click(() => {
+				this.viewer.scene.removeAllMeasurements();
+			});
+
+			elToolbar.find("img[name=action_measure_point]").click(() => {
+				const measurement = viewer.measuringTool.startInsertion({
+					showDistances: false,
+					showHeight: true,
+					showArea: false,
+					closed: false,
+					maxMarkers: 2,
+					name: 'Height'
+				});
+			});
+
+			elToolbar.find("img[name=action_measure_distance]").click(() => {
+				const measurement = viewer.measuringTool.startInsertion({
+					showDistances: true,
+					showArea: false,
+					closed: false,
+					name: 'Distance'
+				});
+			});
+
+			elToolbar.find("img[name=action_measure_circle]").click(() => {
+				const measurement = viewer.measuringTool.startInsertion({
+					showDistances: false,
+					showHeight: false,
+					showArea: false,
+					showCircle: true,
+					showEdges: false,
+					closed: false,
+					maxMarkers: 3,
+					name: 'Circle'
+				});
+			});
+		}
+
+		// { // MATERIAL
+		// 	let options = [
+		// 		"RGBA",
+		// 		"elevation",
+		// 		"level of detail",
+		// 		"indices",
+		// 		// "intensity",
+		// 		// "classification",
+		// 		// "source id",
+		// 	];
+
+		// 	let attributeSelection = elToolbar.find('#optMaterial');
+		// 	for (let option of options) {
+		// 		let elOption = $(`<option>${option}</option>`);
+		// 		attributeSelection.append(elOption);
+		// 	}
+
+		// 	const updateMaterialSelection = (event, ui) => {
+		// 		let selectedValue = attributeSelection.selectmenu().val();
+
+		// 		for (const pointcloud of viewer.scene.pointclouds) {
+		// 			pointcloud.material.activeAttributeName = selectedValue;
+		// 		}
+		// 	};
+
+		// 	attributeSelection.selectmenu({
+		// 		change: updateMaterialSelection
+		// 	});
+		// }
+
+		{ // POINT BUDGET
+			elToolbar.find('#sldPointBudget').slider({
+				value: viewer.getPointBudget(),
+				min: 100 * 1000,
+				max: 25 * 1000 * 1000,
+				step: 100 * 1000,
+				slide: (event, ui) => {
+					this.viewer.setPointBudget(ui.value);
+				}
+			});
+
+			const onBudgetChange = () => {
+				let budget = (viewer.getPointBudget() / (1000 * 1000)).toFixed(1) + "M";
+				elToolbar.find('span[name=lblPointBudget]').html(budget);
+			};
+
+			onBudgetChange();
+			viewer.addEventListener("point_budget_changed", onBudgetChange);
+		}
+	</script>
+
+
+</body>
+
+</html>
