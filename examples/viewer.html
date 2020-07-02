@@ -69,7 +69,7 @@
 		let pointClouds = [{path: '../pointclouds/1/pointcloud/cloud.js', name: '1', position: new THREE.Vector3(-44.1870, 57.0310, 27.2240)},
 						   {path: '../pointclouds/2/pointcloud/cloud.js', name: '2', position: new THREE.Vector3(-45.1440, 57.0160, 27.2290)}];
 
-		loadPointCloud(pointClouds[0].path, pointClouds[0].name);
+		//loadPointCloud(pointClouds[0].path, pointClouds[0].name);
 		loadPointCloud(pointClouds[1].path, pointClouds[1].name);
 		add360Image(viewer.scene.scene, '../pointclouds/2/360.jpg');
 		setupControls(pointClouds[1].position, lookAt, 0.2);
