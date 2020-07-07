@@ -15171,6 +15171,8 @@ Potree.Viewer = class PotreeViewer extends THREE.EventDispatcher{
 		
 		
 	}
+
+
     
     setLanguage(lang){
         i18n.setLng(lang);
@@ -19805,7 +19807,7 @@ let initSidebar = function(){
 	initMeasurementDetails();
 	initSceneList();
 	initSettings()
-	
+
 	$('#potree_version_number').html(Potree.version.major + "." + Potree.version.minor + Potree.version.suffix);
 	$('.perfect_scrollbar').perfectScrollbar();
 }
