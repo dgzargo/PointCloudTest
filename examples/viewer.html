@@ -205,8 +205,19 @@
 		}
 		function getImageType() {
 			let imgtype = Potree.utils.getParameterByName('imagetype');
-			if (!imgtype) imgtype = 'webp';
+			if (!imgtype) imgtype = canUseWebP() ? 'webp' : 'jpg';
 			return imgtype;
+		}
+		function canUseWebP() {
+			var elem = document.createElement('canvas');
+
+			if (!!(elem.getContext && elem.getContext('2d'))) {
+				// was able or not to get WebP representation
+				return elem.toDataURL('image/webp').indexOf('data:image/webp') === 0;
+			}
+
+			// very old browser like IE 8, canvas not supported
+			return false;
 		}
 		jQuery.fn.init.prototype.showHide = function (show){
 			if(show){

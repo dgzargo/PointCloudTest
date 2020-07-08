@@ -55,17 +55,28 @@ Potree.OrbitControls = class OrbitControls extends THREE.EventDispatcher{
             this.fov = THREE.Math.clamp( this.fov - e.delta * 0.5, 15, 75 );
         };
 
-        let previousTouch = null;
+        let doubleTouchCenter = null;
+        let doubleTouchInitialLength = null;
+
+        let doubleTouchParameters = (t1, t2) => {
+            let hypotenuse = new THREE.Vector2().subVectors(t1, t2).length();
+            let center = new THREE.Vector2().set(t1).lerp(t2, 0.5);
+            return {hypotenuse, center};
+        }
+
         let touchStart = e => {
-            previousTouch = e;
+            let touches = e.touches;
+            if (touches.length === 2){
+                let {hypotenuse, center} = doubleTouchParameters(touches[0], touches[1]);
+                doubleTouchCenter = center;
+                doubleTouchInitialLength = hypotenuse;
+            }
         };
 
         let touchEnd = e => {
-            previousTouch = e;
         };
 
         let touchMove = e => {
-            previousTouch = e;
         };
 
         this.addEventListener("touchstart", touchStart);
