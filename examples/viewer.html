@@ -141,7 +141,7 @@
 
 		$('#rightDownPanel').dialog({position:{my: "right bottom", at: "right bottom", of: window }});
 		viewer.renderer.domElement.addEventListener('touchstart', function (e) {
-			let touches = e.changedTouches;
+			let touches = e.touches;
 			if (touches.length === 2){
 				let first = touches[0];
 				let second = touches[1];
@@ -158,7 +158,7 @@
 		});
 
 		viewer.renderer.domElement.addEventListener('touchmove', function (e) {
-			let touches = e.changedTouches;
+			let touches = e.touches;
 			if (touches.length === 2){
 				let first = touches[0];
 				let second = touches[1];
