@@ -18,6 +18,15 @@
     top: 100%;
 }
 
+#rightDownPanel{
+    z-index: 1;
+    position: relative;
+    min-width: 300px;
+    min-height: 300px;
+    bottom: 0;
+    right: 0;
+}
+
 .container {
     display: block;
     position: relative;

@@ -72,6 +72,9 @@
 			</div>
 		</div>
 		<div id="potree_sidebar_container"> </div>
+		<div id="rightDownPanel" title="debug info">
+			<span id="textOutput"></span>
+		</div>
     </div>
 	
 	<script>
@@ -80,16 +83,17 @@
 
 		viewer.addEventListener("point_budget_changed", function(event){
 			$( '#pointBudgetTitle>span:last-child')[0].textContent = Potree.utils.addCommas(viewer.getPointBudget());
+			$('#pointBudgetSlider').slider({value: viewer.getPointBudget()});
 		});
 
 		viewer.setEDLEnabled(true);
-		viewer.setPointBudget(2*1000*1000);
+		viewer.setPointBudget(500*1000);
 		viewer.loadSettingsFromURL();
 		
 		//viewer.setDescription("DOLWIN ALPHA - st002");
 		viewer.loadGUI(() => {
-			viewer.setLanguage('en');
-			$("#menu_appearance").next().show();
+			//viewer.setLanguage('en');
+			//$("#menu_appearance").next().show();
 			// viewer.toggleSidebar();
 
 			$('#potree_sidebar_container').showHide(false);
@@ -135,6 +139,23 @@
 		scene.view.position = pointClouds[1].position;
 		scene.view.lookAt(lookAt.clone());
 
+		$('#rightDownPanel').dialog({position:{my: "right bottom", at: "right bottom", of: window }});
+		viewer.renderer.domElement.addEventListener('touchstart', function (e) {
+			let touches = e.changedTouches;
+			if (touches.length === 2){
+				let first = touches[0];
+				let second = touches[1];
+
+				let diffX = first.clientX - second.clientX;
+				let diffY = first.clientY - second.clientY;
+
+				let hypotenuse = (diffX).powerOfTwo() + (diffY).powerOfTwo();
+				$('#textOutput').text(hypotenuse);
+			}
+			if (touches.length === 1){
+				console.log(touches[0]);
+			}
+		});
 
 		function loadPointCloud(path, name) {
 			Potree.loadPointCloud(path, name, e => {
@@ -176,6 +197,9 @@
 			} else {
 				this.hide();
 			}
+		}
+		Number.prototype.powerOfTwo = function () {
+			return this * this;
 		}
 		/*(function(){
 			initToolbar();
