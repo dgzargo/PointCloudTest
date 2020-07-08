@@ -150,7 +150,24 @@
 				let diffY = first.clientY - second.clientY;
 
 				let hypotenuse = (diffX).powerOfTwo() + (diffY).powerOfTwo();
-				$('#textOutput').text(hypotenuse);
+				$('#textOutput').html('<p>'+'(hypotenuse).sqrt()'+'</p><p></p>');
+			}
+			if (touches.length === 1){
+				console.log(touches[0]);
+			}
+		});
+
+		viewer.renderer.domElement.addEventListener('touchmove', function (e) {
+			let touches = e.changedTouches;
+			if (touches.length === 2){
+				let first = touches[0];
+				let second = touches[1];
+
+				let diffX = first.clientX - second.clientX;
+				let diffY = first.clientY - second.clientY;
+
+				let hypotenuse = (diffX).powerOfTwo() + (diffY).powerOfTwo();
+				$('#textOutput>p:last-child').text((hypotenuse).sqrt());
 			}
 			if (touches.length === 1){
 				console.log(touches[0]);
@@ -198,9 +215,8 @@
 				this.hide();
 			}
 		}
-		Number.prototype.powerOfTwo = function () {
-			return this * this;
-		}
+		Number.prototype.powerOfTwo = function () { return this * this; }
+		Number.prototype.sqrt = function () { return Math.sqrt(this); }
 		/*(function(){
 			initToolbar();
 			initMeasurementDetails();
