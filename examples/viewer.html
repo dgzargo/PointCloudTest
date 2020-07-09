@@ -72,8 +72,8 @@
 			</div>
 		</div>
 		<div id="potree_sidebar_container"> </div>
-		<div id="rightDownPanel" title="debug info">
-			<span id="textOutput"></span>
+		<div id="rightDownPanel" title="tap info">
+			<span id="textOutput"><p></p><p></p></span>
 		</div>
     </div>
 	
@@ -140,31 +140,19 @@
 		scene.view.lookAt(lookAt.clone());
 
 		$('#rightDownPanel').dialog({position:{my: "right bottom", at: "right bottom", of: window }});
+		let touch = null;
 		viewer.renderer.domElement.addEventListener('touchstart', function (e) {
-			let touches = e.touches;
-			if (touches.length === 2){
-				let first = touches[0];
-				let second = touches[1];
-
-				let diffX = first.clientX - second.clientX;
-				let diffY = first.clientY - second.clientY;
-
-				let hypotenuse = (diffX).powerOfTwo() + (diffY).powerOfTwo();
-				$('#textOutput').html('<p>'+(hypotenuse).sqrt()+'</p><p></p>');
-			}
+			if (e.touches.length !== 1) touch = null;
+			touch = e.touches[0];
 		});
 
-		viewer.renderer.domElement.addEventListener('touchmove', function (e) {
-			let touches = e.touches;
-			if (touches.length === 2){
-				let first = touches[0];
-				let second = touches[1];
-
-				let diffX = first.clientX - second.clientX;
-				let diffY = first.clientY - second.clientY;
-
-				let hypotenuse = (diffX).powerOfTwo() + (diffY).powerOfTwo();
-				$('#textOutput>p:last-child').text((hypotenuse).sqrt());
+		viewer.renderer.domElement.addEventListener('touchend', function (e) {
+			if (!touch) return;
+			if (e.touches.length !== 0 && e.changedTouches.length !== 1) return;
+			if (e.changedTouches[0].pageX === touch.pageX && e.changedTouches[0].pageY === touch.pageY){
+				$('#textOutput>p:first-child').text('x: ' + touch.pageX);
+				$('#textOutput>p:last-child').text('y: ' + touch.pageY);
+				console.log(e.changedTouches[0]);
 			}
 		});
 
@@ -220,8 +208,6 @@
 				this.hide();
 			}
 		}
-		Number.prototype.powerOfTwo = function () { return this * this; }
-		Number.prototype.sqrt = function () { return Math.sqrt(this); }
 		/*(function(){
 			initToolbar();
 			initMeasurementDetails();
