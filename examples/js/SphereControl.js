@@ -61,17 +61,23 @@ Potree.OrbitControls = class OrbitControls extends THREE.EventDispatcher{
 
         let touchData = null;
 
+        let vector2OfTouch = (touch) => {
+            return new THREE.Vector2(touch.pageX, touch.pageY);
+        }
+
         let getTouchData = (e) => {
             let touches = e.touches;
+            /*if(touches.length === 1){
+                touches = [touches[0], {pageX:0, pageY:0}];
+            }//*/
             if (touches.length === 2){
-                let t1 = new THREE.Vector2(touches[0].pageX, touches[0].pageY);
-                let t2 = new THREE.Vector2(touches[1].pageX, touches[1].pageY);
+                let t1 = vector2OfTouch(touches[0]);
+                let t2 = vector2OfTouch(touches[1]);
                 let hypotenuse = new THREE.Vector2().subVectors(t1, t2).length();
-                let center = new THREE.Vector2().set(t1).lerp(t2, 0.5);
+                let center = new THREE.Vector2().copy(t1).lerp(t2, 0.5);
                 return {twoTouchesDistance: hypotenuse, center: center};
             } else if(touches.length === 1){
-                let t1 = touches[0];
-                return {twoTouchesDistance: null, center: new THREE.Vector2(t1.pageX, t1.pageY)};
+                return {twoTouchesDistance: null, center: vector2OfTouch(touches[0])};
             } else return null;
         }
 
@@ -88,7 +94,7 @@ Potree.OrbitControls = class OrbitControls extends THREE.EventDispatcher{
                 applyRotationDelta(this.rotationUpdateDelta, rotationEventDelta);
             } //pan
             {
-                if (touchData.twoTouchesDistance && false){
+                if (touchData.twoTouchesDistance){
                     let scale = touchData.twoTouchesDistance / newTouchData.twoTouchesDistance
                     this.fov = THREE.Math.clamp( this.fov * scale, 15, 75 );
                 }
