@@ -88,7 +88,7 @@ Potree.OrbitControls = class OrbitControls extends THREE.EventDispatcher{
                 applyRotationDelta(this.rotationUpdateDelta, rotationEventDelta);
             } //pan
             {
-                if (touchData.twoTouchesDistance){
+                if (touchData.twoTouchesDistance && false){
                     let scale = touchData.twoTouchesDistance / newTouchData.twoTouchesDistance
                     this.fov = THREE.Math.clamp( this.fov * scale, 15, 75 );
                 }
