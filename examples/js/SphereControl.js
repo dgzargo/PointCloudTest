@@ -55,8 +55,12 @@ Potree.OrbitControls = class OrbitControls extends THREE.EventDispatcher{
             this.dispatchEvent({type: "end"});
         };
 
+        let clampAndSaveFOV = (newFOV) => {
+            this.fov = THREE.Math.clamp( newFOV, 15, 75 );
+        };
+
         let scroll = (e) => {
-            this.fov = THREE.Math.clamp( this.fov - e.delta * 0.5, 15, 75 );
+            clampAndSaveFOV(this.fov - e.delta * 0.5);
         };
 
         let touchData = null;
@@ -66,18 +70,40 @@ Potree.OrbitControls = class OrbitControls extends THREE.EventDispatcher{
         }
 
         let getTouchData = (e) => {
-            let touches = e.touches;
+            let touches = Array.prototype.map.call(e.touches, (touch)=>vector2OfTouch(touch));
             /*if(touches.length === 1){
-                touches = [touches[0], {pageX:0, pageY:0}];
+                touches = [touches[0], new THREE.Vector2()];
             }//*/
+            if (touches.length > 2){
+                let getFarthestVector = (arrayOfVectors, startVectorIndex) => {
+                    if (!Array.isArray(arrayOfVectors) || typeof startVectorIndex !== 'number'){
+                        throw 'bed params';
+                    }
+                    let startVector = arrayOfVectors[startVectorIndex];
+                    let maxDistance = 0;
+                    let maxIndex = 0;
+                    arrayOfVectors.forEach((vector, index)=>{
+                        if (index === startVectorIndex) return;
+                        let distance = startVector.distanceTo(vector);
+                        if (distance > maxDistance) {
+                            maxDistance = distance;
+                            maxIndex = index;
+                        }
+                    });
+                    return maxIndex;
+                };
+                let firstIndex = getFarthestVector(touches, 0);
+                let secondIndex = getFarthestVector(touches, firstIndex);
+                touches = [touches[firstIndex],touches[secondIndex]];
+            }
             if (touches.length === 2){
-                let t1 = vector2OfTouch(touches[0]);
-                let t2 = vector2OfTouch(touches[1]);
+                let t1 = touches[0];
+                let t2 = touches[1];
                 let hypotenuse = new THREE.Vector2().subVectors(t1, t2).length();
                 let center = new THREE.Vector2().copy(t1).lerp(t2, 0.5);
                 return {twoTouchesDistance: hypotenuse, center: center};
             } else if(touches.length === 1){
-                return {twoTouchesDistance: null, center: vector2OfTouch(touches[0])};
+                return {twoTouchesDistance: null, center: touches[0]};
             } else return null;
         }
 
@@ -96,7 +122,7 @@ Potree.OrbitControls = class OrbitControls extends THREE.EventDispatcher{
             {
                 if (touchData.twoTouchesDistance){
                     let scale = touchData.twoTouchesDistance / newTouchData.twoTouchesDistance
-                    this.fov = THREE.Math.clamp( this.fov * scale, 15, 75 );
+                    clampAndSaveFOV(this.fov * scale);
                 }
             } // zoom
             touchData = newTouchData;
