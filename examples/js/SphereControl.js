@@ -12,13 +12,31 @@ Potree.OrbitControls = class OrbitControls extends THREE.EventDispatcher{
         this.rotationSpeed = 5;
 
         this.fadeFactor = 10;
-        this.yawDelta = 0;
-        this.pitchDelta = 0;
+        // this.yawDelta = 0;
+        // this.pitchDelta = 0;
+        this.rotationUpdateDelta = {yawDelta: 0, pitchDelta: 0};
 
         this.fov = viewer.fov;
 
+        let dragEventEnabled = true;
+
+        let calculateRotation = (panVector) => {
+            let yawDelta = panVector.x / this.renderer.domElement.clientWidth * this.fov  / 150 * this.rotationSpeed;
+            let pitchDelta = panVector.y / this.renderer.domElement.clientHeight * this.fov  / 300 * this.rotationSpeed;
+            return {yawDelta, pitchDelta};
+        };
+
+        let applyRotationDelta = (baseRotation, deltaRotation) => {
+            baseRotation.yawDelta += deltaRotation.yawDelta;
+            baseRotation.pitchDelta += deltaRotation.pitchDelta;
+        };
 
         let drag = (e) => {
+            if (dragEventEnabled === false) {
+                dragEventEnabled = true;
+                return;
+            }
+
             if(e.drag.object !== null){
                 return;
             }
@@ -29,21 +47,8 @@ Potree.OrbitControls = class OrbitControls extends THREE.EventDispatcher{
                 this.dispatchEvent({type: "start"});
             }
 
-            let ndrag = {
-                x: e.drag.lastDrag.x / this.renderer.domElement.clientWidth,
-                y: e.drag.lastDrag.y / this.renderer.domElement.clientHeight
-            };
-
-            // fov relative compensation
-            ndrag.y = ndrag.y * this.fov  / 300;
-            ndrag.x = ndrag.x * this.fov  / 150;
-
-            if(e.drag.mouse === Potree.MOUSE.LEFT){
-                this.yawDelta += ndrag.x * this.rotationSpeed;
-                this.pitchDelta += ndrag.y * this.rotationSpeed;
-            }
-
-
+            let rotationEventDelta = calculateRotation(e.drag.lastDrag);
+            applyRotationDelta(this.rotationUpdateDelta, rotationEventDelta);
         };
 
         let drop = e => {
@@ -51,36 +56,48 @@ Potree.OrbitControls = class OrbitControls extends THREE.EventDispatcher{
         };
 
         let scroll = (e) => {
-
             this.fov = THREE.Math.clamp( this.fov - e.delta * 0.5, 15, 75 );
         };
 
-        let doubleTouchCenter = null;
-        let doubleTouchInitialLength = null;
+        let touchData = null;
 
-        let doubleTouchParameters = (t1, t2) => {
-            let hypotenuse = new THREE.Vector2().subVectors(t1, t2).length();
-            let center = new THREE.Vector2().set(t1).lerp(t2, 0.5);
-            return {hypotenuse, center};
-        }
-
-        let touchStart = e => {
+        let getTouchData = (e) => {
             let touches = e.touches;
             if (touches.length === 2){
-                let {hypotenuse, center} = doubleTouchParameters(touches[0], touches[1]);
-                doubleTouchCenter = center;
-                doubleTouchInitialLength = hypotenuse;
-            }
-        };
+                let t1 = new THREE.Vector2(touches[0].pageX, touches[0].pageY);
+                let t2 = new THREE.Vector2(touches[1].pageX, touches[1].pageY);
+                let hypotenuse = new THREE.Vector2().subVectors(t1, t2).length();
+                let center = new THREE.Vector2().set(t1).lerp(t2, 0.5);
+                return {twoTouchesDistance: hypotenuse, center: center};
+            } else if(touches.length === 1){
+                let t1 = touches[0];
+                return {twoTouchesDistance: null, center: new THREE.Vector2(t1.pageX, t1.pageY)};
+            } else return null;
+        }
 
-        let touchEnd = e => {
+        let writeDownTouch = e => {
+            touchData = getTouchData(e);
         };
 
         let touchMove = e => {
+            dragEventEnabled = false;
+            let newTouchData = getTouchData(e);
+            {
+                let panVector = new THREE.Vector2().subVectors(newTouchData.center, touchData.center);
+                let rotationEventDelta = calculateRotation(panVector);
+                applyRotationDelta(this.rotationUpdateDelta, rotationEventDelta);
+            } //pan
+            {
+                if (touchData.twoTouchesDistance){
+                    let scale = touchData.twoTouchesDistance / newTouchData.twoTouchesDistance
+                    this.fov = THREE.Math.clamp( this.fov * scale, 15, 75 );
+                }
+            } // zoom
+            touchData = newTouchData;
         };
 
-        this.addEventListener("touchstart", touchStart);
-        this.addEventListener("touchend", touchEnd);
+        this.addEventListener("touchstart", writeDownTouch);
+        this.addEventListener("touchend", writeDownTouch);
         this.addEventListener("touchmove", touchMove);
         this.addEventListener("drag", drag);
         this.addEventListener("drop", drop);
@@ -102,8 +119,8 @@ Potree.OrbitControls = class OrbitControls extends THREE.EventDispatcher{
             let yaw = view.yaw;
             let pitch = view.pitch;
 
-            yaw += progression * this.yawDelta;
-            pitch += progression * this.pitchDelta;
+            yaw += progression * this.rotationUpdateDelta.yawDelta;
+            pitch += progression * this.rotationUpdateDelta.pitchDelta;
 
             view.yaw = yaw;
             view.pitch = pitch;
@@ -112,8 +129,8 @@ Potree.OrbitControls = class OrbitControls extends THREE.EventDispatcher{
         {// decelerate over time
             let attenuation = Math.max(0, 1 - this.fadeFactor * delta);
 
-            this.yawDelta *= attenuation;
-            this.pitchDelta *= attenuation;
+            this.rotationUpdateDelta.yawDelta *= attenuation;
+            this.rotationUpdateDelta.pitchDelta *= attenuation;
         }
 
         {//apply fov

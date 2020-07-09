@@ -152,9 +152,6 @@
 				let hypotenuse = (diffX).powerOfTwo() + (diffY).powerOfTwo();
 				$('#textOutput').html('<p>'+(hypotenuse).sqrt()+'</p><p></p>');
 			}
-			if (touches.length === 1){
-				console.log(e);
-			}
 		});
 
 		viewer.renderer.domElement.addEventListener('touchmove', function (e) {
@@ -168,9 +165,6 @@
 
 				let hypotenuse = (diffX).powerOfTwo() + (diffY).powerOfTwo();
 				$('#textOutput>p:last-child').text((hypotenuse).sqrt());
-			}
-			if (touches.length === 1){
-				console.log(e);
 			}
 		});
 
