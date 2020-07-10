@@ -4849,7 +4849,7 @@ Potree.InputHandler = class InputHandler extends THREE.EventDispatcher{
 			let y = e.touches[0].pageY - rect.top;
 			this.mouse.set(x, y);
 			
-			this.startDragging(null);
+			//this.startDragging(null);
 		}
 		
 		for(let inputListener of this.inputListeners){
@@ -4866,15 +4866,15 @@ Potree.InputHandler = class InputHandler extends THREE.EventDispatcher{
 		
 		e.preventDefault();
 		
-		for(let inputListener of this.inputListeners){
+		/*for(let inputListener of this.inputListeners){
 			inputListener.dispatchEvent({
 				type: "drop",
 				drag: this.drag,
 				viewer: this.viewer
 			});
-		}
+		}//*/
 		
-		this.drag = null;
+		//this.drag = null;
 		
 		for(let inputListener of this.inputListeners){
 			inputListener.dispatchEvent({
@@ -4904,14 +4904,14 @@ Potree.InputHandler = class InputHandler extends THREE.EventDispatcher{
 				
 				this.drag.end.set(x, y);
 				
-				if(this.logMessages) console.log(this.constructor.name + ": drag: ");
+				/*if(this.logMessages) console.log(this.constructor.name + ": drag: ");
 				for(let inputListener of this.inputListeners){
 					inputListener.dispatchEvent({
 						type: "drag",
 						drag: this.drag,
 						viewer: this.viewer
 					});
-				}
+				}//*/
 			}
 		}
 		
@@ -10757,6 +10757,8 @@ Potree.MeasuringTool = class MeasuringTool extends THREE.EventDispatcher{
 				cancel.callback();
 			}
 		};
+
+		this.insertionCallback = insertionCallback;
 		
 		cancel.callback = e => {
 			if(cancel.removeLastMarker){

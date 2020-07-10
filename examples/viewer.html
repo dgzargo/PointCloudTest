@@ -144,6 +144,11 @@
 		viewer.renderer.domElement.addEventListener('touchstart', function (e) {
 			if (e.touches.length !== 1) touch = null;
 			touch = e.touches[0];
+			// viewer.inputHandler.onMouseMove({clientX: touch.pageX, clientY: touch.pageY, preventDefault:function(){}});
+			let event = new Event('mousemove')
+			event.clientX = touch.pageX;
+			event.clientY = touch.pageY;
+			viewer.renderer.domElement.dispatchEvent(event);
 		});
 
 		viewer.renderer.domElement.addEventListener('touchend', function (e) {
@@ -152,9 +157,17 @@
 			if (e.changedTouches[0].pageX === touch.pageX && e.changedTouches[0].pageY === touch.pageY){
 				$('#textOutput>p:first-child').text('x: ' + touch.pageX);
 				$('#textOutput>p:last-child').text('y: ' + touch.pageY);
-				console.log(e.changedTouches[0]);
+				// viewer.inputHandler.onMouseUp({button: THREE.MOUSE.LEFT, preventDefault:function(){}});
+				// viewer.measuringTool.insertionCallback({button:THREE.MOUSE.LEFT});
+				// viewer.inputHandler.onMouseMove({clientX: e.changedTouches[0].pageX, clientY: e.changedTouches[0].pageY, preventDefault:function(){}});
+				let event = new Event('mouseup')
+				event.clientX = touch.pageX;
+				event.clientY = touch.pageY;
+				event.button = THREE.MOUSE.LEFT;
+				viewer.renderer.domElement.dispatchEvent(event);
 			}
 		});
+		//viewer.inputHandler.logMessages = true;
 
 		function loadPointCloud(path, name) {
 			Potree.loadPointCloud(path, name, e => {
