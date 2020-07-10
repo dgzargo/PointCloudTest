@@ -160,7 +160,11 @@
 				// viewer.inputHandler.onMouseUp({button: THREE.MOUSE.LEFT, preventDefault:function(){}});
 				// viewer.measuringTool.insertionCallback({button:THREE.MOUSE.LEFT});
 				// viewer.inputHandler.onMouseMove({clientX: e.changedTouches[0].pageX, clientY: e.changedTouches[0].pageY, preventDefault:function(){}});
-				let event = new Event('mouseup')
+				let event = new Event('mousemove')
+				event.clientX = touch.pageX;
+				event.clientY = touch.pageY;
+				viewer.renderer.domElement.dispatchEvent(event);
+				event = new Event('mouseup')
 				event.clientX = touch.pageX;
 				event.clientY = touch.pageY;
 				event.button = THREE.MOUSE.LEFT;
