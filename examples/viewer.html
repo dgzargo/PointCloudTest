@@ -41,6 +41,9 @@
 	<script src="../libs/plasio/vendor/bluebird.js"></script>
 
 	<script src="./js/SphereControl.js"></script>
+	<script src="./js/TypeCheck.js"></script>
+	<script src="./js/PointConfig.js"></script>
+	<script src="./js/UISetup.js"></script>
 
     <div class="potree_container" style="position: absolute; width: 100%; height: 100%; left: 0px; top: 0px; ">
 		<div id="potree_render_area"> </div>
@@ -60,7 +63,7 @@
 					</label>
 					<div></div>
 				</div>
-				<div id="defaultUIVisibilityControl">
+				<div id="potreeUIVisibilityControl">
 					<label class="container">default UI visible
 						<input type="checkbox">
 						<span class="checkmark"></span>
@@ -78,171 +81,14 @@
     </div>
 	
 	<script>
-	
-		window.viewer = new Potree.Viewer(document.getElementById("potree_render_area"));
+		let profiles = [];
+		let config = new GeneralPointConfig('../pointclouds', profiles, '360.' + getImageType(), 'pointcloud/cloud.js');
+		profiles.push(new PointProfile(config, '1', new THREE.Vector3(-44.1870, 57.0310, 27.2240), Math.PI*36/1800));
+		profiles.push(new PointProfile(config, '2', new THREE.Vector3(-45.1440, 57.0160, 27.2290), Math.PI*128/180));
 
-		viewer.addEventListener("point_budget_changed", function(event){
-			$( '#pointBudgetTitle>span:last-child')[0].textContent = Potree.utils.addCommas(viewer.getPointBudget());
-			$('#pointBudgetSlider').slider({value: viewer.getPointBudget()});
-		});
-
-		viewer.setEDLEnabled(true);
-		viewer.setPointBudget(500*1000);
-		viewer.loadSettingsFromURL();
-		
-		//viewer.setDescription("DOLWIN ALPHA - st002");
-		viewer.loadGUI(() => {
-			//viewer.setLanguage('en');
-			//$("#menu_appearance").next().show();
-			// viewer.toggleSidebar();
-
-			$('#potree_sidebar_container').showHide(false);
-			$('#potree_render_area>img').showHide(false);
-			$('#pointBudgetSlider').slider({
-				value: viewer.getPointBudget(),
-				min: 100*1000,
-				max: 10*1000*1000,
-				step: 1000,
-				slide: function( event, ui ) {viewer.setPointBudget(ui.value);}
-			});
-			$('#pointCloudVisibilityControl>label>input').change(function() {
-				let visible = this.checked;
-				viewer.scene.pointclouds[0].material.visible = visible;
-			});
-			$('#defaultUIVisibilityControl>label>input').change(function() {
-				let visible = this.checked;
-				$('#potree_render_area').css("left", "0px");
-				$('#potree_sidebar_container').showHide(visible);
-				$('#potree_render_area>img').showHide(visible);
-			});
-			{
-				let showHideButton = $('#showHideButton').button({
-					icon: 'ui-icon-caret-1-n'
-				}).click(function () {
-					let menu = $('#menu');
-					menu.toggleClass('hide');
-					let isHidden = menu.hasClass('hide');
-					showHideButton.button("option", "icon", 'ui-icon-caret-1-'+ (isHidden? 's' : 'n'));
-				})
-				showHideButton.click();
-			}
-		});
-
-		let lookAt = new THREE.Vector3(-20.1870, 57.0310, 27.2240);
-		let pointClouds = [{path: '../pointclouds/1/pointcloud/cloud.js', name: '1', position: new THREE.Vector3(-44.1870, 57.0310, 27.2240)},
-						   {path: '../pointclouds/2/pointcloud/cloud.js', name: '2', position: new THREE.Vector3(-45.1440, 57.0160, 27.2290)}];
-
-		let scene = viewer.scene;
-
-		loadPointCloud(pointClouds[1].path, pointClouds[1].name);
-		add360Image(viewer.scene.scene, pointClouds[1].position, '../pointclouds/2/360.'+getImageType());
-		scene.view.position = pointClouds[1].position;
-		scene.view.lookAt(lookAt.clone());
-
-		$('#rightDownPanel').dialog({position:{my: "right bottom", at: "right bottom", of: window }});
-		let touch = null;
-		viewer.renderer.domElement.addEventListener('touchstart', function (e) {
-			if (e.touches.length !== 1) touch = null;
-			touch = e.touches[0];
-			// viewer.inputHandler.onMouseMove({clientX: touch.pageX, clientY: touch.pageY, preventDefault:function(){}});
-			let event = new Event('mousemove')
-			event.clientX = touch.pageX;
-			event.clientY = touch.pageY;
-			viewer.renderer.domElement.dispatchEvent(event);
-		});
-
-		viewer.renderer.domElement.addEventListener('touchend', function (e) {
-			if (!touch) return;
-			if (e.touches.length !== 0 && e.changedTouches.length !== 1) return;
-			if (e.changedTouches[0].pageX === touch.pageX && e.changedTouches[0].pageY === touch.pageY){
-				$('#textOutput>p:first-child').text('x: ' + touch.pageX);
-				$('#textOutput>p:last-child').text('y: ' + touch.pageY);
-				// viewer.inputHandler.onMouseUp({button: THREE.MOUSE.LEFT, preventDefault:function(){}});
-				// viewer.measuringTool.insertionCallback({button:THREE.MOUSE.LEFT});
-				// viewer.inputHandler.onMouseMove({clientX: e.changedTouches[0].pageX, clientY: e.changedTouches[0].pageY, preventDefault:function(){}});
-				let event = new Event('mousemove')
-				event.clientX = touch.pageX;
-				event.clientY = touch.pageY;
-				viewer.renderer.domElement.dispatchEvent(event);
-				event = new Event('mouseup')
-				event.clientX = touch.pageX;
-				event.clientY = touch.pageY;
-				event.button = THREE.MOUSE.LEFT;
-				viewer.renderer.domElement.dispatchEvent(event);
-			}
-		});
-		//viewer.inputHandler.logMessages = true;
-
-		function loadPointCloud(path, name) {
-			Potree.loadPointCloud(path, name, e => {
-				let scene = viewer.scene;
-				let pointcloud = e.pointcloud;
-
-				let material = pointcloud.material;
-				material.size = 0.1;
-				material.pointSizeType = Potree.PointSizeType.ADAPTIVE;
-				material.shape = Potree.PointShape.SQUARE;
-				material.visible = false;
-
-				scene.addPointCloud(pointcloud);
-			});
-		}
-		function add360Image(scene, position, path) {
-			var geometry = new THREE.SphereBufferGeometry( 500, 60, 40);
-			geometry.scale( - 1, 1, 1 );
-			geometry.rotateX(Math.PI/2);
-			geometry.rotateZ(Math.PI*128/180);
-
-
-			var texture = new THREE.TextureLoader().load( path );
-			var material = new THREE.MeshBasicMaterial( { map: texture } );
-
-			var mesh = new THREE.Mesh( geometry, material );
-			mesh.position.copy(position);
-
-			scene.add( mesh );
-		}
-		function getImageType() {
-			let imgtype = Potree.utils.getParameterByName('imagetype');
-			if (!imgtype) imgtype = canUseWebP() ? 'webp' : 'jpg';
-			return imgtype;
-		}
-		function canUseWebP() {
-			var elem = document.createElement('canvas');
-
-			if (!!(elem.getContext && elem.getContext('2d'))) {
-				// was able or not to get WebP representation
-				return elem.toDataURL('image/webp').indexOf('data:image/webp') === 0;
-			}
-
-			// very old browser like IE 8, canvas not supported
-			return false;
-		}
-		jQuery.fn.init.prototype.showHide = function (show){
-			if(show){
-				this.show();
-			} else {
-				this.hide();
-			}
-		}
-		/*(function(){
-			initToolbar();
-			initMeasurementDetails();
-			let elProfile = $('<div>').load(new URL(Potree.scriptPath + "/profile.html").href, () => {
-				$(document.body).append(elProfile.children());
-				this.profileWindow = new Potree.ProfileWindow(this);
-				this.profileWindowController = new Potree.ProfileWindowController(this);
-
-				$("#profile_window").draggable({
-					handle: $("#profile_titlebar"),
-					containment: $(document.body)
-				});
-				$("#profile_window").resizable({
-					containment: $(document.body),
-					handles: "n, e, s, w"
-				});
-			});
-		}).bind(viewer)();//*/
+		let pageControl = new PageControl(config);
+		pageControl.setProfileByIndex(0);
+		window.viewer = pageControl.viewer; // potree can't work without it
 	</script>
 	
 	

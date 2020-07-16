@@ -166,7 +166,7 @@ Potree.OrbitControls = class OrbitControls extends THREE.EventDispatcher{
         }
 
         {//apply fov
-            viewer.fov = this.fov;
+            this.viewer.fov = this.fov;
         }
     }
 
