@@ -83,41 +83,6 @@
         }
         function setupCustomUI(viewer) {
             {
-                $('#pointBudgetSlider').slider({
-                    value: viewer.getPointBudget(),
-                    min: 100*1000,
-                    max: 10*1000*1000,
-                    step: 1000,
-                    slide: function( event, ui ) {viewer.setPointBudget(ui.value);}
-                });
-                viewer.addEventListener('point_budget_changed', function(event){
-                    $( '#pointBudgetTitle>span:last-child')[0].textContent = Potree.utils.addCommas(viewer.getPointBudget());
-                    $('#pointBudgetSlider').slider({value: viewer.getPointBudget()});
-                });
-                viewer.dispatchEvent({'type': 'point_budget_changed'});
-            }//PointBudget slider
-            {
-                $('#pointCloudVisibilityControl>label>input').change(function() {
-                    let visible = this.checked;
-                    viewer.scene.pointclouds[0].material.visible = visible;
-                });
-            }//pointCloud visibility control
-            {
-                jQuery.fn.init.prototype.showHide = function (show){
-                    if(show){
-                        this.show();
-                    } else {
-                        this.hide();
-                    }
-                }
-                $('#potreeUIVisibilityControl>label>input').change(function() {
-                    let visible = this.checked;
-                    $('#potree_render_area').css("left", "0px");
-                    $('#potree_sidebar_container').showHide(visible);
-                    $('#potree_render_area>img').showHide(visible);
-                });
-            }//potree UI visibility control
-            {
                 let showHideButton = $('#showHideButton').button({
                     icon: 'ui-icon-caret-1-n'
                 }).click(function () {
@@ -221,8 +186,9 @@
             let viewer = new Potree.Viewer(document.getElementById("potree_render_area"));
 
             viewer.setEDLEnabled(true);
-            viewer.setPointBudget(500*1000);
+            viewer.setPointBudget(200*1000);
             viewer.loadSettingsFromURL();
+            viewer.setEDLEnabled(false);
 
             return viewer;
         }
@@ -291,7 +257,7 @@
     let profileLoaded = false;
     let meshDictionary = {};
 
-    function PageControl(pointConfig) {
+    function SceneControl(pointConfig) {
         let viewer = setupViewer();
         setupPotreeUI(viewer);
         //viewer.inputHandler.logMessages = true;
@@ -310,12 +276,16 @@
 
         Object.defineProperties(this, {
             pointConfig: { value: pointConfig },
-            viewer: { value: viewer }
+            viewer: { value: viewer },
+            pointBudget: {
+                get: function() { return this.viewer.getPointBudget(); },
+                set: function(pb) { this.viewer.setPointBudget(pb); }
+            }
         });
     }
 
-    PageControl.prototype = Object.assign(Object.create(THREE.EventDispatcher.prototype), {
-        constructor: PageControl,
+    SceneControl.prototype = Object.assign(Object.create(THREE.EventDispatcher.prototype), {
+        constructor: SceneControl,
         setProfile: function (pointProfile) {
             Validator.validateInstance(pointProfile, PointProfile);
 
@@ -349,9 +319,64 @@
             let {pointProfile} = meshDictionary[mesh];
             if (!pointProfile) return;
             this.setProfile(pointProfile);
+        },
+        pointCloudSetVisible: function(visibility){
+            viewer.scene.pointclouds.forEach(function (pointCloud) {
+                pointCloud.material.visible = visibility;
+            });
         }
     });
 
+    function UIControl(sceneControl){
+        Validator.validateInstance(sceneControl, SceneControl);
+        Object.defineProperties(this, {
+            sceneControl: { value: sceneControl }
+        });
+        this.pointBudgetSliderSetup();
+        this.pointCloudVisibilityControlSetup();
+        jQuery.fn.init.prototype.showHide = function (show){
+            if(show){
+                this.show();
+            } else {
+                this.hide();
+            }
+        }
+        this.potreeUIVisibilityControlSetup();
+    }
+    UIControl.prototype = Object.assign(Object.create(Object.prototype), {
+        constructor: UIControl,
+        pointBudgetSliderSetup: function(){
+            $('#pointBudgetSlider').slider({
+                value: this.sceneControl.pointBudget,
+                min: 100*1000,
+                max: 10*1000*1000,
+                step: 1000,
+                slide: function( event, ui ) { this.sceneControl.pointBudget = ui.value; }.bind(this)
+            });
+            $('#pointBudgetTitle>span:first-child')[0].textContent = 'Point Budget:';
+            this.sceneControl.viewer.addEventListener('point_budget_changed', function(){
+                $('#pointBudgetTitle>span:last-child')[0].textContent = Potree.utils.addCommas(this.sceneControl.pointBudget);
+                $('#pointBudgetSlider').slider({ value: this.sceneControl.pointBudget });
+            }.bind(this));
+            this.sceneControl.viewer.dispatchEvent({'type': 'point_budget_changed'});
+        },
+        pointCloudVisibilityControlSetup: function () {
+            let uIControlContext = this;
+            $('#pointCloudVisibilityControl>label>input').change(function() {
+                uIControlContext.sceneControl.pointCloudSetVisible(this.checked);
+            });
+        },
+        potreeUIVisibilityControlSetup: function () {
+            $('#potreeUIVisibilityControl>label>input').change(function() {
+                let visible = this.checked;
+                $('#potree_render_area').css("left", "0px");
+                $('#potree_sidebar_container').showHide(visible);
+                $('#potree_render_area>img').showHide(visible);
+            });
+        }
+    })
+
     window.getImageType = getImageType;
-    window.PageControl = PageControl;
+    window.SceneControl = SceneControl;
+    window.UIControl = UIControl;
 })();

@@ -51,7 +51,7 @@
 			<div id="menu">
 				<div id="pointBudgetControl">
 					<div id="pointBudgetTitle">
-						<span>Point Budget: </span>
+						<span></span>
 						<span></span>
 					</div>
 					<div id="pointBudgetSlider"></div>
@@ -83,12 +83,15 @@
 	<script>
 		let profiles = [];
 		let config = new GeneralPointConfig('../pointclouds', profiles, '360.' + getImageType(), 'pointcloud/cloud.js');
-		profiles.push(new PointProfile(config, '1', new THREE.Vector3(-44.1870, 57.0310, 27.2240), Math.PI*36/1800));
+		profiles.push(new PointProfile(config, '1', new THREE.Vector3(-44.1870, 57.0310, 27.2240), Math.PI*36/180));
 		profiles.push(new PointProfile(config, '2', new THREE.Vector3(-45.1440, 57.0160, 27.2290), Math.PI*128/180));
 
-		let pageControl = new PageControl(config);
-		pageControl.setProfileByIndex(0);
-		window.viewer = pageControl.viewer; // potree can't work without it
+		let sceneControl = new SceneControl(config);
+		sceneControl.setProfileByIndex(0);
+
+		new UIControl(sceneControl);
+
+		window.viewer = sceneControl.viewer; // potree can't work without it
 	</script>
 	
 	

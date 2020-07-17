@@ -5007,7 +5007,7 @@ Potree.InputHandler = class InputHandler extends THREE.EventDispatcher{
 	}
 	
 	onMouseClick(e){
-		if(this.logMessages) console.log(this.constructor.name + ": onMouseClick");
+		if(this.logMessages) console.log(this.constructor.name + ": onMouseClick", e);
 		
 		e.preventDefault();
 	}
@@ -10757,8 +10757,6 @@ Potree.MeasuringTool = class MeasuringTool extends THREE.EventDispatcher{
 				cancel.callback();
 			}
 		};
-
-		this.insertionCallback = insertionCallback;
 		
 		cancel.callback = e => {
 			if(cancel.removeLastMarker){
