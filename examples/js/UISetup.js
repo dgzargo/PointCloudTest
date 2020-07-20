@@ -1,6 +1,9 @@
 
 (function (){
     {
+        var colorMap = { default: 0xeeff00, selected: 0x0032c8 }
+    } // constants
+    {
         function getImageType() {
             let imgtype = Potree.utils.getParameterByName('imagetype');
             if (!imgtype) imgtype = canUseWebP() ? 'webp' : 'jpg';
@@ -23,19 +26,18 @@
             let createSphereMesh = function(geometryParams, material){
                 let {radius, widthSegments, heightSegments} = geometryParams;
                 let geometry = new THREE.SphereBufferGeometry(radius, widthSegments, heightSegments);//new THREE.IcosahedronBufferGeometry(500, 1);
-                let sphere = new THREE.Mesh( geometry, material );
-                return sphere;
+                return new THREE.Mesh(geometry, material);
             };
             let meshDictionary = {};
             config.pointProfiles.forEach(function (pointProfile) {
-                let material = new THREE.MeshBasicMaterial( {color: 0xffff00} );
+                let material = new THREE.MeshBasicMaterial( {color: colorMap.default} );
                 /*let lod = new THREE.LOD();
                     lod.autoUpdate = true;
                     lod.addLevel(createSphereMesh({radius:0.3, widthSegments:12, heightSegments:10}, material), 2);
                     lod.addLevel(createSphereMesh({radius:0.3, widthSegments:30, heightSegments:20}, material), 0.5);
                     lod.position.copy(pointProfile.position);
                     viewer.scene.scene.add(lod);*/
-                let object3d = createSphereMesh({radius: 0.3, widthSegments: 12, heightSegments: 10}, material);
+                let object3d = createSphereMesh({radius: 0.15, widthSegments: 12, heightSegments: 10}, material);
                 object3d.position.copy(pointProfile.position);
                 viewer.scene.scene.add(object3d);
                 meshDictionary[object3d.uuid] = {pointProfile, object3d};
@@ -59,14 +61,14 @@
             });
         }
         function add360Image(viewer, pointProfile) {
-            var geometry = new THREE.SphereGeometry( 500, 60, 40);
+            let geometry = new THREE.SphereGeometry( 500, 60, 40);
             geometry.scale( - 1, 1, 1 );
             geometry.rotateX(Math.PI/2);
             geometry.rotateZ(pointProfile.z_rotation);
 
 
-            var texture = new THREE.TextureLoader().load( pointProfile.fullPathToImage() );
-            var material = new THREE.MeshBasicMaterial( { map: texture } );
+            let texture = new THREE.TextureLoader().load( pointProfile.fullPathToImage() );
+            let material = new THREE.MeshBasicMaterial( { map: texture } );
 
             let sphere = new THREE.Mesh( geometry, material );
             sphere.position.copy(pointProfile.position);
@@ -75,68 +77,116 @@
         }
     } // add scene elements
     {
-        function setupPotreeUI(viewer) {
-            viewer.loadGUI(() => {
-                $('#potree_sidebar_container').hide();
-                $('#potree_render_area>img').hide();
-            });
-        }
-        function setupCustomUI(viewer) {
-            {
-                let showHideButton = $('#showHideButton').button({
-                    icon: 'ui-icon-caret-1-n'
-                }).click(function () {
-                    let menu = $('#menu');
-                    menu.toggleClass('hide');
-                    let isHidden = menu.hasClass('hide');
-                    showHideButton.button("option", "icon", 'ui-icon-caret-1-'+ (isHidden? 's' : 'n'));
-                })
-                showHideButton.click();
-            }//custom UI toggle
-            {
-                $('#rightDownPanel').dialog({position:{my: "right bottom", at: "right bottom", of: window }});
-            }//debug dialog box
-        }
         function addTouchEventsReflection(viewer) {
-            viewer.renderer.domElement.addEventListener('touchstart', function (e) {
-                if (e.touches.length !== 1) return;
-                let touch = e.touches[0];
-                // viewer.inputHandler.onMouseMove({clientX: touch.pageX, clientY: touch.pageY, preventDefault:function(){}});
-                let event = new Event('mousemove')
-                event.clientX = touch.pageX;
-                event.clientY = touch.pageY;
-                viewer.renderer.domElement.dispatchEvent(event);
-            });
-
-            /*viewer.renderer.domElement.addEventListener('touchend', function (e) {
-                if (!touch) return;
-                if (e.touches.length !== 0 && e.changedTouches.length !== 1) return;
-                if (e.changedTouches[0].pageX === touch.pageX && e.changedTouches[0].pageY === touch.pageY){
-                    $('#textOutput>p:first-child').text('x: ' + touch.pageX);
-                    $('#textOutput>p:last-child').text('y: ' + touch.pageY);
-                    // viewer.inputHandler.onMouseUp({button: THREE.MOUSE.LEFT, preventDefault:function(){}});
-                    // viewer.measuringTool.insertionCallback({button:THREE.MOUSE.LEFT});
-                    // viewer.inputHandler.onMouseMove({clientX: e.changedTouches[0].pageX, clientY: e.changedTouches[0].pageY, preventDefault:function(){}});
-                    let event = new Event('mouseup');
-                    event.clientX = touch.pageX;
-                    event.clientY = touch.pageY;
-                    event.button = THREE.MOUSE.LEFT;
+            {
+                this.addEventListener('touchstart', function (e) {
+                    e = e.event;
+                    if (e.touches.length !== 1) return;
+                    let touch = e.touches[0];
+                    let event = new MouseEvent('mousemove', {
+                        clientX: touch.pageX,
+                        clientY: touch.pageY
+                    });
                     viewer.renderer.domElement.dispatchEvent(event);
-                }
-            });//*/
-            this.addEventListener('ClickNoMove', function (e) {
-                let position = e.position;
-                $('#textOutput>p:first-child').text('x: ' + position.x);
-                $('#textOutput>p:last-child').text('y: ' + position.y);
+                })
+                this.addEventListener('ClickNoMove', function (e) {
+                    let position = e.position;
+                    let event = new MouseEvent('mouseup', {
+                        clientX: position.x,
+                        clientY: position.y,
+                        button: THREE.MOUSE.LEFT
+                    });
+                    event.fake = true;
+                    viewer.renderer.domElement.dispatchEvent(event);
+                });
+            }
+            {
+                this.addEventListener('ClickNoMove', onDocumentMouseDown(viewer, meshDictionary, function (uuid) {
+                    this.viewer.scene.removeAllMeasurements();
+                    this.setProfileByMeshUuid(uuid);
+                }.bind(this)));
 
-                let event = new Event('mouseup'); // new MouseEvent('mouseup', {clientX:position.x,clientY:position.y,button: THREE.MOUSE.LEFT});
-                event.clientX = position.x;
-                event.clientY = position.y;
-                event.button = THREE.MOUSE.LEFT;
-                viewer.renderer.domElement.dispatchEvent(event);
-            });//*/
+                let mouseMoveEventListener = onDocumentMouseDown(viewer, meshDictionary);
+                this.addEventListener('mousemove', function (event) {
+                    let uuid = mouseMoveEventListener(event);
+                    viewer.renderer.domElement.style.cursor = uuid ? 'pointer' : 'default';
+                    Object.values(meshDictionary).map(function (o) { return o.object3d; }).forEach(function (mesh) {
+                        mesh.material.color.set(colorMap.default);
+                    })
+                    if (uuid) {
+                        let selectedMesh = meshDictionary[uuid].object3d;
+                        selectedMesh.material.color.set(colorMap.selected);
+                    }
+                });
+            }
         }
-    } // UI setup
+        function subscribeAndDispatchEvents(viewer) {
+            let domElement = viewer.renderer.domElement;
+            let subscriber = this;
+            {
+                let touchPosition = null;
+                domElement.addEventListener('touchstart', function (e) {
+                    if (e.touches.length !== 1) touchPosition = null;
+                    let touch = e.touches[0];
+                    touchPosition = new THREE.Vector2(touch.pageX, touch.pageY);
+
+                    subscriber.dispatchEvent({
+                        type: 'touchstart',
+                        event: e
+                    });
+                });
+
+                domElement.addEventListener('touchend', function (e) {
+                    if (!touchPosition) return;
+                    //if (e.touches.length !== 0 && e.changedTouches.length !== 1) return;
+                    let changedTouch = e.changedTouches[0];
+                    let changedPosition = new THREE.Vector2(changedTouch.pageX, changedTouch.pageY);
+                    if (changedPosition.equals(touchPosition)){
+                        subscriber.dispatchEvent({
+                            type: 'ClickNoMove',
+                            position: touchPosition
+                        });
+                    }
+                });
+
+                domElement.addEventListener('touchmove', function (e) {
+                    if (!touchPosition) return;
+                    let changedTouch = e.changedTouches[0];
+                    let changedPosition = new THREE.Vector2(changedTouch.pageX, changedTouch.pageY);
+                    if (!changedPosition.equals(touchPosition)) touchPosition = null;
+                });
+            } // touch events handling
+            {
+                let mouse = null;
+                domElement.addEventListener('mousedown', function (e) {
+                    if (e.button !== 0) return;
+                    mouse = new THREE.Vector2(e.pageX, e.pageY);
+                });
+
+                domElement.addEventListener('mouseup', function (e) {
+                    if (!mouse) return;
+                    if (!e.fake && e.pageX === mouse.x && e.pageY === mouse.y){
+                        subscriber.dispatchEvent({
+                            type: 'ClickNoMove',
+                            position: mouse
+                        });
+                    }
+                    mouse = null;
+                });
+
+                domElement.addEventListener('mousemove', function (e) {
+                    let changedPosition = new THREE.Vector2(e.pageX, e.pageY);
+                    if (mouse && !changedPosition.equals(mouse)) {
+                        mouse = null;
+                    }
+                    subscriber.dispatchEvent({
+                        type: 'mousemove',
+                        position: changedPosition
+                    });
+                });
+            } // mouse events handling
+        }
+    } // events setup
     {
         function rollbackUI(viewer) {
             let scene = new Potree.Scene(viewer.renderer);
@@ -176,8 +226,8 @@
 
                     let object = intersects[0].object;
                     let {pointProfile} = objectsMap[object.uuid];
-                    if (selectProfileCallback && typeof selectProfileCallback === 'function') selectProfileCallback(pointProfile);
-                    return pointProfile;
+                    if (pointProfile && selectProfileCallback && typeof selectProfileCallback === 'function') selectProfileCallback(object.uuid);
+                    return object.uuid;
                 }
 
             }
@@ -186,71 +236,11 @@
             let viewer = new Potree.Viewer(document.getElementById("potree_render_area"));
 
             viewer.setEDLEnabled(true);
-            viewer.setPointBudget(200*1000);
+            viewer.setPointBudget(500*1000);
             viewer.loadSettingsFromURL();
             viewer.setEDLEnabled(false);
 
             return viewer;
-        }
-        function subscribeAndDispatchEvents(viewer, subscriber) {
-            let domElement = viewer.renderer.domElement;
-            {
-                let touchPosition = null;
-                domElement.addEventListener('touchstart', function (e) {
-                    if (e.touches.length !== 1) touchPosition = null;
-                    let touch = e.touches[0];
-                    touchPosition = new THREE.Vector2(touch.pageX, touch.pageY);
-                });
-
-                domElement.addEventListener('touchend', function (e) {
-                    if (!touchPosition) return;
-                    //if (e.touches.length !== 0 && e.changedTouches.length !== 1) return;
-                    let changedTouch = e.changedTouches[0];
-                    let changedPosition = new THREE.Vector2(changedTouch.pageX, changedTouch.pageY);
-                    if (changedPosition.equals(touchPosition)){
-                        subscriber.dispatchEvent({
-                            type: 'ClickNoMove',
-                            position: touchPosition
-                        });
-                    }
-                });
-
-                domElement.addEventListener('touchmove', function (e) {
-                    if (!touchPosition) return;
-                    let changedTouch = e.changedTouches[0];
-                    let changedPosition = new THREE.Vector2(changedTouch.pageX, changedTouch.pageY);
-                    if (!changedPosition.equals(touchPosition)) touchPosition = null;
-                });
-            } // touch events handling
-            {
-                let mouse = null;
-                domElement.addEventListener('mousedown', function (e) {
-                    if (e.button !== 0) return;
-                    mouse = new THREE.Vector2(e.pageX, e.pageY);
-                });
-
-                domElement.addEventListener('mouseup', function (e) {
-                    if (!mouse) return;
-                    if (e.pageX === mouse.x && e.pageY === mouse.y){
-                        subscriber.dispatchEvent({
-                            type: 'ClickNoMove',
-                            position: mouse
-                        });
-                    }
-                    mouse = null;
-                });
-
-                domElement.addEventListener('mousemove', function (e) {
-                    let changedPosition = new THREE.Vector2(e.pageX, e.pageY);
-                    if (mouse && !changedPosition.equals(mouse)) {
-                        mouse = null;
-                    }
-                    subscriber.dispatchEvent({
-                        type: 'mousemove',
-                        position: changedPosition
-                    });
-                });
-            } // mouse events handling
         }
     } // general
 
@@ -259,20 +249,9 @@
 
     function SceneControl(pointConfig) {
         let viewer = setupViewer();
-        setupPotreeUI(viewer);
         //viewer.inputHandler.logMessages = true;
-        setupCustomUI(viewer);
         addTouchEventsReflection.call(this, viewer);
-        subscribeAndDispatchEvents(viewer, this);
-
-
-        this.addEventListener('ClickNoMove', onDocumentMouseDown(viewer, meshDictionary, this.setProfile.bind(this)));
-
-        let mouseMoveEventListener = onDocumentMouseDown(viewer, meshDictionary);
-        this.addEventListener('mousemove', function (event) {
-            let profile = mouseMoveEventListener(event);
-            viewer.renderer.domElement.style.cursor = (profile !== undefined) ? 'pointer' : 'default';
-        });
+        subscribeAndDispatchEvents.call(this, viewer);
 
         Object.defineProperties(this, {
             pointConfig: { value: pointConfig },
@@ -314,9 +293,9 @@
             let pointProfile = config.pointProfiles[profileIndex];
             this.setProfile(pointProfile);
         },
-        setProfileByMesh: function (mesh) {
+        setProfileByMeshUuid: function (uuid) {
             if (!meshDictionary) return;
-            let {pointProfile} = meshDictionary[mesh];
+            let {pointProfile} = meshDictionary[uuid];
             if (!pointProfile) return;
             this.setProfile(pointProfile);
         },
@@ -342,6 +321,10 @@
             }
         }
         this.potreeUIVisibilityControlSetup();
+        this.customUIToggleSetup();
+        this.debugDialogBoxSetup();
+        this.potreeUISetup();
+        this.sphereVisibilityControlSetup();
     }
     UIControl.prototype = Object.assign(Object.create(Object.prototype), {
         constructor: UIControl,
@@ -373,8 +356,42 @@
                 $('#potree_sidebar_container').showHide(visible);
                 $('#potree_render_area>img').showHide(visible);
             });
+        },
+        customUIToggleSetup: function () {
+            let showHideButton = $('#showHideButton').button({
+                icon: 'ui-icon-caret-1-n'
+            }).click(function () {
+                let menu = $('#menu');
+                menu.toggleClass('hide');
+                let isHidden = menu.hasClass('hide');
+                showHideButton.button("option", "icon", 'ui-icon-caret-1-'+ (isHidden? 's' : 'n'));
+            })
+            showHideButton.click();
+        },
+        debugDialogBoxSetup: function () {
+            $('#rightDownPanel').dialog({position:{my: "left bottom", at: "left bottom", of: window }});
+
+            this.sceneControl.addEventListener('ClickNoMove', function (e) {
+                let position = e.position;
+                $('#textOutput>p:first-child').text('x: ' + position.x);
+                $('#textOutput>p:last-child').text('y: ' + position.y);
+            });
+        },
+        potreeUISetup: function () {
+            this.sceneControl.viewer.loadGUI(() => {
+                $('#potree_sidebar_container').hide();
+                $('#potree_render_area>img').hide();
+            });
+        },
+        sphereVisibilityControlSetup: function () {
+            $('#sphereVisibilityControl>label>input').change(function() {
+                let visible = this.checked;
+                Object.values(meshDictionary).map(function (o) { return o.object3d; }).forEach(function (mesh) {
+                    mesh.visible = visible;
+                })
+            });
         }
-    })
+    });
 
     window.getImageType = getImageType;
     window.SceneControl = SceneControl;
