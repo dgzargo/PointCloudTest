@@ -249,7 +249,7 @@
 
     function SceneControl(pointConfig) {
         let viewer = setupViewer();
-        //viewer.inputHandler.logMessages = true;
+        viewer.inputHandler.logMessages = true;
         addTouchEventsReflection.call(this, viewer);
         subscribeAndDispatchEvents.call(this, viewer);
 
