@@ -5106,7 +5106,8 @@ Potree.InputHandler = class InputHandler extends THREE.EventDispatcher{
 					});
 				}
 			}
-			
+
+			console.log('drag set to null; prev value = ', this.drag);
 			this.drag = null;
 		}
 	 }
@@ -10750,9 +10751,11 @@ Potree.MeasuringTool = class MeasuringTool extends THREE.EventDispatcher{
 				if(measure.points.length >= measure.maxMarkers){
 					cancel.callback();
 				}
-				
+
+				console.log('old drag', this.viewer.inputHandler.drag);
 				this.viewer.inputHandler.startDragging(
 					measure.spheres[measure.spheres.length - 1]);
+				console.log('new drag', this.viewer.inputHandler.drag);
 			}else if(e.button === THREE.MOUSE.RIGHT){
 				cancel.callback();
 			}
