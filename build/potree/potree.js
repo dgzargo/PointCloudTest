@@ -11327,7 +11327,7 @@ Potree.ProfileTool = class ProfileTool extends THREE.EventDispatcher{
 				this.viewer.inputHandler.startDragging(
 					profile.spheres[profile.spheres.length - 1]);
 				
-				if (true) this.viewer.inputHandler.disableDragErase = true;
+				if (isSafari) this.viewer.inputHandler.disableDragErase = true;
 			}else if(e.button === THREE.MOUSE.RIGHT){
 				cancel.callback();
 			}
