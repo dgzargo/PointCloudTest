@@ -10757,7 +10757,7 @@ Potree.MeasuringTool = class MeasuringTool extends THREE.EventDispatcher{
 				this.viewer.inputHandler.startDragging(
 					measure.spheres[measure.spheres.length - 1]);
 
-				if (isSafari) this.viewer.inputHandler.disableDragErase = true;
+				this.viewer.inputHandler.disableDragErase = true;
 			}else if(e.button === THREE.MOUSE.RIGHT){
 				cancel.callback();
 			}
