@@ -16,7 +16,9 @@
   </head>
 
   <body>
-  
+  	<script>
+		window.isSafari = /constructor/i.test(window.HTMLElement) || (function (p) { return p.toString() === "[object SafariRemoteNotification]"; })(!window['safari'] || (typeof safari !== 'undefined' && safari.pushNotification));
+	</script>
 	<script src="../libs/jquery/jquery-3.1.1.js"></script>
 	<script src="../libs/spectrum/spectrum.js"></script>
 	

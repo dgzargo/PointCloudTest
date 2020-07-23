@@ -5007,7 +5007,7 @@ Potree.InputHandler = class InputHandler extends THREE.EventDispatcher{
 	}
 	
 	onMouseClick(e){
-		if(this.logMessages) console.log(this.constructor.name + ": onMouseClick", e);
+		if(this.logMessages) console.log(this.constructor.name + ": onMouseClick");
 		
 		e.preventDefault();
 	}
@@ -5106,9 +5106,11 @@ Potree.InputHandler = class InputHandler extends THREE.EventDispatcher{
 					});
 				}
 			}
-
-			console.log('drag set to null; prev value = ', this.drag);
-			this.drag = null;
+			if (this.disableDragErase) {
+				delete(this.disableDragErase);
+			} else {
+				this.drag = null;
+			}
 		}
 	 }
 	 
@@ -10752,10 +10754,8 @@ Potree.MeasuringTool = class MeasuringTool extends THREE.EventDispatcher{
 					cancel.callback();
 				}
 
-				console.log('old drag', this.viewer.inputHandler.drag);
 				this.viewer.inputHandler.startDragging(
 					measure.spheres[measure.spheres.length - 1]);
-				console.log('new drag', this.viewer.inputHandler.drag);
 			}else if(e.button === THREE.MOUSE.RIGHT){
 				cancel.callback();
 			}
@@ -11329,6 +11329,7 @@ Potree.ProfileTool = class ProfileTool extends THREE.EventDispatcher{
 			}else if(e.button === THREE.MOUSE.RIGHT){
 				cancel.callback();
 			}
+			if (true) this.viewer.inputHandler.disableDragErase = true;
 		};
 		
 		

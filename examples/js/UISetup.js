@@ -90,6 +90,7 @@
                     viewer.renderer.domElement.dispatchEvent(event);
                 })
                 this.addEventListener('ClickNoMove', function (e) {
+                    if (e.skipMouseUpEvent) return;
                     let position = e.position;
                     let event = new MouseEvent('mouseup', {
                         clientX: position.x,
@@ -168,7 +169,8 @@
                     if (!e.fake && e.pageX === mouse.x && e.pageY === mouse.y){
                         subscriber.dispatchEvent({
                             type: 'ClickNoMove',
-                            position: mouse
+                            position: mouse,
+                            skipMouseUpEvent: true
                         });
                     }
                     mouse = null;
@@ -249,7 +251,7 @@
 
     function SceneControl(pointConfig) {
         let viewer = setupViewer();
-        viewer.inputHandler.logMessages = true;
+        //viewer.inputHandler.logMessages = true;
         addTouchEventsReflection.call(this, viewer);
         subscribeAndDispatchEvents.call(this, viewer);
 
