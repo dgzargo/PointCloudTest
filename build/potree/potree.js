@@ -5106,6 +5106,7 @@ Potree.InputHandler = class InputHandler extends THREE.EventDispatcher{
 					});
 				}
 			}
+
 			if (this.disableDragErase) {
 				delete(this.disableDragErase);
 			} else {
@@ -10758,6 +10759,9 @@ Potree.MeasuringTool = class MeasuringTool extends THREE.EventDispatcher{
 					measure.spheres[measure.spheres.length - 1]);
 
 				this.viewer.inputHandler.disableDragErase = true;
+				setTimeout(function () {
+					delete(this.viewer.inputHandler.disableDragErase);
+				}.bind(this), 5);
 			}else if(e.button === THREE.MOUSE.RIGHT){
 				cancel.callback();
 			}
