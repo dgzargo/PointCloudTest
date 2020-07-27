@@ -2,6 +2,7 @@
 (function (){
     {
         var colorMap = { default: 0xeeff00, selected: 0x0032c8 }
+        var pointCloudNameQueryParamName = 'pointCloudName';
     } // constants
     {
         function getImageType() {
@@ -61,7 +62,7 @@
             });
         }
         function add360Image(viewer, pointProfile) {
-            let geometry = new THREE.SphereGeometry( 500, 60, 40);
+            let geometry = new THREE.SphereGeometry( 100, 60, 40);
             geometry.scale( - 1, 1, 1 );
             geometry.rotateX(Math.PI/2);
             geometry.rotateZ(pointProfile.z_rotation);
@@ -74,6 +75,8 @@
             sphere.position.copy(pointProfile.position);
 
             viewer.scene.scene.add( sphere );
+
+            return sphere;
         }
     } // add scene elements
     {
@@ -258,14 +261,10 @@
         Object.defineProperties(this, {
             pointConfig: { value: pointConfig },
             viewer: { value: viewer },
-            pointBudget: {
-                get: function() { return this.viewer.getPointBudget(); },
-                set: function(pb) { this.viewer.setPointBudget(pb); }
-            }
         });
     }
 
-    SceneControl.prototype = Object.assign(Object.create(THREE.EventDispatcher.prototype), {
+    SceneControl.prototype = Object.defineProperties(Object.assign(Object.create(THREE.EventDispatcher.prototype), {
         constructor: SceneControl,
         setProfile: function (pointProfile) {
             Validator.validateInstance(pointProfile, PointProfile);
@@ -283,11 +282,12 @@
                     })
                 };
                 exchangeDictionary(meshDictionary, addOtherPoints(this.viewer, config));
-                add360Image(this.viewer, pointProfile);
+                this.currentSphereMesh = add360Image(this.viewer, pointProfile);
                 addPointCloud(pointProfile);
                 this.viewer.scene.view.position = pointProfile.position;
             }
             profileLoaded = true;
+            Potree.utils.setParameter(pointCloudNameQueryParamName, pointProfile.name);
         },
         setProfileByIndex: function (profileIndex) {
             Validator.validateNumber(profileIndex);
@@ -301,11 +301,46 @@
             if (!pointProfile) return;
             this.setProfile(pointProfile);
         },
+        getProfileByQuery: function(){
+            let pointCloudName = Potree.utils.getParameterByName(pointCloudNameQueryParamName);
+            if (pointCloudName && pointCloudName.length > 0) {
+                for(const profile of this.pointConfig.pointProfiles){
+                    if (profile.name === pointCloudName){
+                        return profile;
+                    }
+                }
+            }
+            return null;
+        },
         pointCloudSetVisible: function(visibility){
             viewer.scene.pointclouds.forEach(function (pointCloud) {
                 pointCloud.material.visible = visibility;
             });
-        }
+        },
+    }), {
+        pointBudget: {
+            get: function() {
+                return this.viewer.getPointBudget();
+            },
+            set: function(pb) {
+                this.viewer.setPointBudget(pb);
+            }
+        },
+        sphereRange: {
+            get: function() {
+                let geometry = this.currentSphereMesh.geometry;
+                geometry.computeBoundingSphere();
+                return geometry.boundingSphere.radius;
+            },
+            set: function(v) {
+                let sphere = this.currentSphereMesh.geometry;
+                let currentRadius = sphere.boundingSphere.radius;
+                currentRadius = 1 / currentRadius;
+                sphere.scale(currentRadius, currentRadius, currentRadius);
+                sphere.scale(v, v, v);
+            }
+        },
+        currentSphereMesh: { value: null, writable: true, enumerable: true },
     });
 
     function UIControl(sceneControl){
@@ -327,6 +362,7 @@
         this.debugDialogBoxSetup();
         this.potreeUISetup();
         this.sphereVisibilityControlSetup();
+        this.spheresVisibilityRangeSliderSetup();
     }
     UIControl.prototype = Object.assign(Object.create(Object.prototype), {
         constructor: UIControl,
@@ -392,6 +428,21 @@
                     mesh.visible = visible;
                 })
             });
+        },
+        spheresVisibilityRangeSliderSetup: function () {
+            let sceneControl = this.sceneControl;
+            let rangeDisplayingSpan = $('#sphereRangeRadiusControl>p>span:last-child');
+            let displayRange = function(range){
+                rangeDisplayingSpan.text(range);
+            };
+            $('#sphereRangeSlider').slider({
+                value: sceneControl.sphereRange,
+                min: 0.5,
+                max: 150,
+                step: 0.1,
+                slide: function( event, ui ) { sceneControl.sphereRange = ui.value; displayRange(ui.value); }
+            });
+            displayRange(sceneControl.sphereRange.toFixed(0));
         }
     });
 

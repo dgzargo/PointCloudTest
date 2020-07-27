@@ -75,6 +75,13 @@
 						<span class="checkmark"></span>
 					</label>
 				</div>
+				<div id="sphereRangeRadiusControl">
+					<p>
+						<span>Spheres visible in range</span>
+						<span></span>
+					</p>
+					<div id="sphereRangeSlider"></div>
+				</div>
 				<div id="tools"></div>
 				<div id="showHideButton"></div>
 			</div>
@@ -92,7 +99,14 @@
 		profiles.push(new PointProfile(config, '2', new THREE.Vector3(-45.1440, 57.0160, 27.2290), Math.PI*128/180));
 
 		let sceneControl = new SceneControl(config);
-		sceneControl.setProfileByIndex(0);
+		{
+			let profile = sceneControl.getProfileByQuery();
+			if (profile) {
+				sceneControl.setProfile(profile);
+			} else {
+				sceneControl.setProfileByIndex(0);
+			}
+		}
 
 		new UIControl(sceneControl);
 
