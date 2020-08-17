@@ -95,8 +95,7 @@
             const cubeMaterials = pointProfile.fullPathToCubeSides().map(function (path) {
                 return new THREE.MeshBasicMaterial({map: new THREE.TextureLoader().load(path), side: THREE.DoubleSide});
             });
-            const cubeMaterial = new THREE.MeshFaceMaterial(cubeMaterials);
-            const cube = new THREE.Mesh(geometry, cubeMaterial);
+            const cube = new THREE.Mesh(geometry, cubeMaterials);
             cube.position.copy(pointProfile.position);
             viewer.scene.scene.add(cube);
             return cube;
@@ -213,6 +212,21 @@
                     });
                 });
             } // mouse events handling
+            {
+                const self = this;
+                viewer.scene.camera.addEventListener('change', function () {
+                    let _angle = null
+                    const eventObj = Object.defineProperties({},{
+                        'angle': {
+                            get: function () {
+                                return _angle !== null ? _angle : _angle = self.lookAzimuth;
+                            }
+                        },
+                        type: { value: 'cameraRotationChange' }
+                    });
+                    self.dispatchEvent(eventObj);
+                })
+            } // camera rotation change
         }
     } // events setup
     {
@@ -276,6 +290,7 @@
     let meshDictionary = {};
 
     function SceneControl(pointConfig) {
+        const self = this;
         let viewer = setupViewer();
         //viewer.inputHandler.logMessages = true;
         addTouchEventsReflection.call(this, viewer);
@@ -285,6 +300,44 @@
         Object.defineProperties(this, {
             pointConfig: { value: pointConfig, enumerable: true },
             viewer: { value: viewer, enumerable: true },
+            pointBudget: {
+                get: function() {
+                    return this.viewer.getPointBudget();
+                },
+                set: function(pb) {
+                    this.viewer.setPointBudget(pb);
+                }
+            },
+            sphereRange: {
+                get: function() {
+                    let geometry = this.currentSphereMesh.geometry;
+                    geometry.computeBoundingSphere();
+                    return geometry.boundingSphere.radius;
+                },
+                set: function(v) {
+                    let sphere = this.currentSphereMesh.geometry;
+                    let currentRadius = sphere.boundingSphere.radius;
+                    currentRadius = 1 / currentRadius;
+                    sphere.scale(currentRadius, currentRadius, currentRadius);
+                    sphere.scale(v, v, v);
+                }
+            },
+            lookAzimuth: {
+                get: function () {
+                    const lookVector = viewer.scene.camera.getWorldDirection();
+                    return THREE.Math.radToDeg(Math.atan2(lookVector.x, lookVector.z));
+                }
+            },
+            onLookAzimuthChange: {
+                value: {
+                    add: function (callback) {
+                        self.addEventListener('cameraRotationChange', callback);
+                    },
+                    remove: function (callback) {
+                        self.removeEventListener('cameraRotationChange', callback);
+                    }
+                }
+            }
         });
     }
 
@@ -342,28 +395,6 @@
             });
         },
     }), {
-        pointBudget: {
-            get: function() {
-                return this.viewer.getPointBudget();
-            },
-            set: function(pb) {
-                this.viewer.setPointBudget(pb);
-            }
-        },
-        sphereRange: {
-            get: function() {
-                let geometry = this.currentSphereMesh.geometry;
-                geometry.computeBoundingSphere();
-                return geometry.boundingSphere.radius;
-            },
-            set: function(v) {
-                let sphere = this.currentSphereMesh.geometry;
-                let currentRadius = sphere.boundingSphere.radius;
-                currentRadius = 1 / currentRadius;
-                sphere.scale(currentRadius, currentRadius, currentRadius);
-                sphere.scale(v, v, v);
-            }
-        },
         currentSphereMesh: { value: null, writable: true, enumerable: true },
     });
 

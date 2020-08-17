@@ -154,8 +154,11 @@ Potree.OrbitControls = class OrbitControls extends THREE.EventDispatcher{
             yaw += progression * this.rotationUpdateDelta.yawDelta;
             pitch += progression * this.rotationUpdateDelta.pitchDelta;
 
-            view.yaw = yaw;
-            view.pitch = pitch;
+            if (view.yaw !== yaw || view.pitch !== pitch) {
+                view.yaw = yaw;
+                view.pitch = pitch;
+                this.scene.camera.dispatchEvent({ type: 'change' });
+            }
         }
 
         {// decelerate over time
