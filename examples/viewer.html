@@ -44,7 +44,7 @@
 	<script src="./js/PointConfig.js"></script>
 	<script src="./js/UISetup.js"></script>
 
-    <div class="potree_container" style="position: absolute; width: 100%; height: 100%; left: 0px; top: 0px; ">
+    <div class="potree_container" style="position: absolute; width: 100%; height: 100%; left: 0; top: 0; ">
 		<div id="potree_render_area"> </div>
 		<div>
 			<div id="menu">
@@ -87,16 +87,17 @@
 			</div>
 		</div>
 		<div id="potree_sidebar_container"> </div>
-		<div id="rightDownPanel" title="tap info">
+		<!--<div id="rightDownPanel" title="tap info">
 			<span id="textOutput"><p></p><p></p></span>
-		</div>
+		</div>-->
     </div>
 	
 	<script>
 		let profiles = [];
-		let config = new GeneralPointConfig('../pointclouds', profiles, '360.' + getImageType(), 'pointcloud/cloud.js');
-		profiles.push(new PointProfile(config, '1', new THREE.Vector3(-44.1870, 57.0310, 27.2240), Math.PI*36/180));
-		profiles.push(new PointProfile(config, '2', new THREE.Vector3(-45.1440, 57.0160, 27.2290), Math.PI*128/180));
+		const cubePaths = ['r','l','u','d','f','b'].map(function (side) { return '360/1/' + side + '/0/0.jpg'; });
+		let config = new GeneralPointConfig('../pointclouds', profiles, '360.' + getImageType(), 'pointcloud/cloud.js', cubePaths);
+		profiles.push(new PointProfile(config, '1', new THREE.Vector3(-44.1870, 57.0310, 27.2240), Math.PI*(-54)/180));//Math.PI*36/180
+		profiles.push(new PointProfile(config, '2', new THREE.Vector3(-45.1440, 57.0160, 27.2290), Math.PI*38/180));//Math.PI*128/180
 
 		let sceneControl = new SceneControl(config);
 		{
