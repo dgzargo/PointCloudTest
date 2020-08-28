@@ -94,8 +94,8 @@
 	
 	<script>
 		let profiles = [];
-		const cubePaths = ['r','l','u','d','f','b'].map(function (side) { return '360/1/' + side + '/0/0.jpg'; });
-		let config = new GeneralPointConfig('../pointclouds', profiles, '360.' + getImageType(), 'pointcloud/cloud.js', cubePaths);
+		const cubeSides = ['r','l','u','d','f','b'].map(function (side) { return side + '.jpg'; });
+		let config = new GeneralPointConfig('../pointclouds', profiles, '360.' + getImageType(), 'pointcloud/cloud.js', cubeSides, '360');
 		profiles.push(new PointProfile(config, '1', new THREE.Vector3(-44.1870, 57.0310, 27.2240), Math.PI*(-54)/180));//Math.PI*36/180
 		profiles.push(new PointProfile(config, '2', new THREE.Vector3(-45.1440, 57.0160, 27.2290), Math.PI*38/180));//Math.PI*128/180
 

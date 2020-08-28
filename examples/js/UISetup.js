@@ -72,7 +72,7 @@
                 scene.addPointCloud(pointcloud);
             });
         }
-        function add360Image(viewer, pointProfile) {
+        function create360(pointProfile, lod) {
             /*let geometry = new THREE.SphereGeometry( 100, 60, 40);
             geometry.scale( - 1, 1, 1 );
             geometry.rotateX(Math.PI/2);
@@ -92,12 +92,11 @@
             geometry.scale( - 1, 1, 1 );
             geometry.rotateX(Math.PI/2);
             geometry.rotateZ(pointProfile.z_rotation);
-            const cubeMaterials = pointProfile.fullPathToCubeSides().map(function (path) {
+            const cubeMaterials = pointProfile.fullPathToCubeSides(lod).map(function (path) {
                 return new THREE.MeshBasicMaterial({map: new THREE.TextureLoader().load(path), side: THREE.DoubleSide});
             });
             const cube = new THREE.Mesh(geometry, cubeMaterials);
             cube.position.copy(pointProfile.position);
-            viewer.scene.scene.add(cube);
             return cube;
         }
     } // add scene elements
@@ -325,7 +324,7 @@
             lookAzimuth: {
                 get: function () {
                     const lookVector = viewer.scene.camera.getWorldDirection();
-                    return THREE.Math.radToDeg(Math.atan2(lookVector.x, lookVector.z));
+                    return THREE.Math.radToDeg(Math.atan2(lookVector.x, lookVector.y));
                 }
             },
             onLookAzimuthChange: {
@@ -345,7 +344,8 @@
         constructor: SceneControl,
         setProfile: function (pointProfile) {
             Validator.validateInstance(pointProfile, PointProfile);
-
+            const viewer = this.viewer;
+            const self = this;
             if (profileLoaded) rollbackUI(this.viewer);
             {
                 let config = this.pointConfig;
@@ -358,8 +358,15 @@
                         base[entry[0]] = entry[1];
                     })
                 };
-                exchangeDictionary(meshDictionary, addOtherPoints.call(this, this.viewer, config));
-                this.currentSphereMesh = add360Image(this.viewer, pointProfile);
+                exchangeDictionary(meshDictionary, addOtherPoints.call(this, viewer, config));
+                const lowQuality360 = this.currentSphereMesh = create360(pointProfile, '1');
+                viewer.scene.scene.add(lowQuality360);
+                const highQuality360 = create360(pointProfile, '3');
+                setTimeout(function (){
+                    viewer.scene.scene.add(highQuality360);
+                    self.currentSphereMesh = highQuality360;
+                    viewer.scene.scene.remove(lowQuality360);
+                }, 5000); // switch to high quality textures
                 addPointCloud(pointProfile);
                 this.viewer.scene.view.position = pointProfile.position;
             }

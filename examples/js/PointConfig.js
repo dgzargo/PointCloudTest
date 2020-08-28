@@ -1,16 +1,18 @@
 
-function GeneralPointConfig(pointCloudRootPath, arrayOfPointProfiles, imageName, pointCloudPath, cubeSidesPath) {
+function GeneralPointConfig(pointCloudRootPath, arrayOfPointProfiles, imageName, pointCloudPath, cubeSidesPaths, cubeTexturesPath) {
     Validator.validateString(pointCloudRootPath);
     Validator.validateArray(arrayOfPointProfiles, function(item){Validator.validateInstance(item, PointProfile);});
     Validator.validateString(imageName);
     Validator.validateString(pointCloudPath);
-    Validator.validateArray(cubeSidesPath, Validator.validateString);
+    Validator.validateArray(cubeSidesPaths, Validator.validateString);
+    Validator.validateString(cubeTexturesPath)
 
     this.pointCloudRootPath = pointCloudRootPath;
     this.pointProfiles = arrayOfPointProfiles;
     this.imageName = imageName;
     this.pointCloudPath = pointCloudPath;
-    this.cubeSidesPath = cubeSidesPath;
+    this.cubeSidesPaths = cubeSidesPaths;
+    this.cubeTexturesPath = cubeTexturesPath;
 }
 function PointProfile(generalPointConfig, name, position, z_rotation = 0) {
     Validator.validateInstance(generalPointConfig, GeneralPointConfig);
@@ -33,9 +35,10 @@ function PointProfile(generalPointConfig, name, position, z_rotation = 0) {
         return fullRootPath() + '/' + generalPointConfig.imageName;
     }
 
-    this.fullPathToCubeSides = function () {
-        return generalPointConfig.cubeSidesPath.map(function (localPath) {
-            return fullRootPath() + '/' + localPath;
+    this.fullPathToCubeSides = function (lod) {
+        Validator.validateString(lod);
+        return generalPointConfig.cubeSidesPaths.map(function (localPath) {
+            return fullRootPath() + '/' + generalPointConfig.cubeTexturesPath + '/' + lod + '/' + localPath;
         });
     }
 }
