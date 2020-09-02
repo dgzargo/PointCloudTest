@@ -14,14 +14,14 @@ function GeneralPointConfig(pointCloudRootPath, arrayOfPointProfiles, imageName,
     this.cubeSidesPaths = cubeSidesPaths;
     this.cubeTexturesPath = cubeTexturesPath;
 }
-function PointProfile(generalPointConfig, name, position, z_rotation = 0) {
+function PointProfile(generalPointConfig, name, position, z_rotation) {
     Validator.validateInstance(generalPointConfig, GeneralPointConfig);
     Validator.validateString(name);
     Validator.validateInstance(position, THREE.Vector3);
 
     this.name = name;
     this.position = position;
-    this.z_rotation = z_rotation;
+    this.z_rotation = z_rotation ? z_rotation : 0;
 
     let fullRootPath = function () {
         return generalPointConfig.pointCloudRootPath + '/' + name;
@@ -40,5 +40,16 @@ function PointProfile(generalPointConfig, name, position, z_rotation = 0) {
         return generalPointConfig.cubeSidesPaths.map(function (localPath) {
             return fullRootPath() + '/' + generalPointConfig.cubeTexturesPath + '/' + lod + '/' + localPath;
         });
+    }
+
+    this.belongsToLayer = function (layerInfo) {
+        const {layer, sub} = layerInfo;
+        console.warn('layers and subs haven\'t implemented yet');
+        return true;
+    }
+
+    this.getLayerInfo = function () {
+        console.warn('layers and subs haven\'t implemented yet');
+        return {layer: '_', sub: '_'};
     }
 }

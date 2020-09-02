@@ -1,13 +1,17 @@
-function Validator() {}
+var Validator = {};
 
 Validator.throwParamIfFalse = function (condition, param) {
     if(!condition){
-        console.warn(param);
+        console.error(param);
     }
 }
 
 Validator.validateType = function (type, value){
     Validator.throwParamIfFalse(typeof value === type, ['wrong type!', value, type]);
+}
+
+Validator.validateInstance = function (type, value){
+    Validator.throwParamIfFalse(value instanceof type, ['wrong type!', value, type]);
 }
 
 Validator.validateString = function (value) {
@@ -27,7 +31,8 @@ Validator.validateBool = function (value) {
 }
 
 Validator.validateArray = function (value, eachValueValidator) {
-    Array.isArray(value);
+    if (value[Symbol.iterator]) value = Array.from(value);
+    Validator.validateInstance(value, Array);
     Array.prototype.forEach.call(value, eachValueValidator);
 }
 

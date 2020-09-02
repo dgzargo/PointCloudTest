@@ -1,9 +1,24 @@
 
 (function (){
     {
-        var colorMap = { default: 0xeeff00, selected: 0x0032c8 }
-        var pointCloudNameQueryParamName = 'pointCloudName';
+        var pin_default = new THREE.TextureLoader().load( "pin-black.svg" );
+        var pin_highlighted = new THREE.TextureLoader().load( "pin-red.svg" );
+        var queryParamNames = {
+            pointCloudName: 'pointCloudName',
+            layer: 'layer',
+            sub: 'sub'
+        };
     } // constants
+    {
+        function exchangeDictionary(base, donor){
+            Object.keys(base).forEach(function (key) {
+                delete base[key];
+            })
+            Object.entries(donor).forEach(function (entry) {
+                base[entry[0]] = entry[1];
+            })
+        }
+    } // utils
     {
         function getImageType() {
             let imgtype = Potree.utils.getParameterByName('imagetype');
@@ -23,36 +38,42 @@
         }
     } // image type utils
     {
-        function addOtherPoints(viewer, config){
+        function addOtherPoints(viewer, config, exceptPointName){
             let meshDictionary = {};
-            let createSphereMesh = function(geometryParams, material){
+            /*let createSphereMesh = function(geometryParams, material){
                 let {radius, widthSegments, heightSegments} = geometryParams;
                 let geometry = new THREE.SphereBufferGeometry(radius, widthSegments, heightSegments);//new THREE.IcosahedronBufferGeometry(500, 1);
                 return new THREE.Mesh(geometry, material);
             };
-            config.pointProfiles.forEach(function (pointProfile) {
-                let material = new THREE.MeshBasicMaterial( {color: colorMap.default} );
-                // let lod = new THREE.LOD();
-                //     lod.autoUpdate = true;
-                //     lod.addLevel(createSphereMesh({radius:0.3, widthSegments:12, heightSegments:10}, material), 2);
-                //     lod.addLevel(createSphereMesh({radius:0.3, widthSegments:30, heightSegments:20}, material), 0.5);
-                //     lod.position.copy(pointProfile.position);
-                //     viewer.scene.scene.add(lod);
-                let object3d = createSphereMesh({radius: 0.15, widthSegments: 12, heightSegments: 10}, material);
-                object3d.position.copy(pointProfile.position);
-                viewer.scene.scene.add(object3d);
-                meshDictionary[object3d.uuid] = {pointProfile, object3d};
-            });//*/
-            /*{
-                config.pointProfiles.forEach(function (pointProfile){
-                    const map = new THREE.TextureLoader().load( "pin-48.svg" );
-                    const material = new THREE.SpriteMaterial( { map: map, color: 0xffffff } );
-                    const sprite = new THREE.Sprite( material );
-                    sprite.scale.set(0.5,0.5,1);
-                    sprite.position.copy(pointProfile.position);
-                    this.viewer.scene.scene.add( sprite );
-                    meshDictionary[sprite.uuid] = {pointProfile, object3d: sprite};
-                }, this);
+            config.pointProfiles.filter(function (pointProfile){ return pointProfile.name !== exceptPointName})
+                //.filter(function (pointProfile){ return pointProfile.layer === requestedLayer})
+                .forEach(function (pointProfile) {
+                    let material = new THREE.MeshBasicMaterial( {color: colorMap.default} );
+                    // let lod = new THREE.LOD();
+                    //     lod.autoUpdate = true;
+                    //     lod.addLevel(createSphereMesh({radius:0.3, widthSegments:12, heightSegments:10}, material), 2);
+                    //     lod.addLevel(createSphereMesh({radius:0.3, widthSegments:30, heightSegments:20}, material), 0.5);
+                    //     lod.position.copy(pointProfile.position);
+                    //     viewer.scene.scene.add(lod);
+                    let object3d = createSphereMesh({radius: 0.15, widthSegments: 12, heightSegments: 10}, material);
+                    object3d.position.copy(pointProfile.position);
+                    viewer.scene.scene.add(object3d);
+                    meshDictionary[object3d.uuid] = {pointProfile, object3d};
+                }
+            );//*/
+            {
+                config.pointProfiles
+                    .filter(function (pointProfile){ return pointProfile.name !== exceptPointName})
+                    //.filter(function (pointProfile){ return pointProfile.layer === requestedLayer})
+                    .forEach(function (pointProfile){
+                        //const map = new THREE.TextureLoader().load( "pin-black.svg" );
+                        const material = new THREE.SpriteMaterial( { map: pin_default } );
+                        const sprite = new THREE.Sprite( material );
+                        sprite.scale.set(0.5,0.5,1);
+                        sprite.position.copy(pointProfile.position);
+                        this.viewer.scene.scene.add( sprite );
+                        meshDictionary[sprite.uuid] = {pointProfile, object3d: sprite};
+                    }, this);
             } // add point of interest as image //*/
             return meshDictionary;
         }
@@ -72,28 +93,18 @@
                 scene.addPointCloud(pointcloud);
             });
         }
-        function create360(pointProfile, lod) {
-            /*let geometry = new THREE.SphereGeometry( 100, 60, 40);
-            geometry.scale( - 1, 1, 1 );
-            geometry.rotateX(Math.PI/2);
-            geometry.rotateZ(pointProfile.z_rotation);
-
-
-            let texture = new THREE.TextureLoader().load( pointProfile.fullPathToImage() );
-            let material = new THREE.MeshBasicMaterial( { map: texture } );
-
-            let sphere = new THREE.Mesh( geometry, material );
-            sphere.position.copy(pointProfile.position);
-
-            viewer.scene.scene.add( sphere );
-
-            return sphere;//*/
+        function create360(pointProfile, lod, callback) {
             const geometry = new THREE.CubeGeometry(500,500,500);
             geometry.scale( - 1, 1, 1 );
             geometry.rotateX(Math.PI/2);
             geometry.rotateZ(pointProfile.z_rotation);
+            let loaded = 0;
+            const textureLoadedCallback = function (){
+                loaded++;
+                if (loaded === 6 && callback) callback(cube);
+            };
             const cubeMaterials = pointProfile.fullPathToCubeSides(lod).map(function (path) {
-                return new THREE.MeshBasicMaterial({map: new THREE.TextureLoader().load(path), side: THREE.DoubleSide});
+                return new THREE.MeshBasicMaterial({map: new THREE.TextureLoader().load(path, textureLoadedCallback), side: THREE.DoubleSide});
             });
             const cube = new THREE.Mesh(geometry, cubeMaterials);
             cube.position.copy(pointProfile.position);
@@ -136,11 +147,11 @@
                     let uuid = mouseMoveEventListener(event);
                     viewer.renderer.domElement.style.cursor = uuid ? 'pointer' : 'default';
                     Object.values(meshDictionary).map(function (o) { return o.object3d; }).forEach(function (mesh) {
-                        mesh.material.color.set(colorMap.default);
+                        mesh.material.map = pin_default;
                     })
                     if (uuid) {
                         let selectedMesh = meshDictionary[uuid].object3d;
-                        selectedMesh.material.color.set(colorMap.selected);
+                        selectedMesh.material.map = pin_highlighted;
                     }
                 });
             }
@@ -294,49 +305,11 @@
         //viewer.inputHandler.logMessages = true;
         addTouchEventsReflection.call(this, viewer);
         subscribeAndDispatchEvents.call(this, viewer);
-        viewer.scene.scene.remove(viewer.scene.scene.children[0]); // remove weird mesh next to (0,0,0)
+        viewer.scene.scene.remove(viewer.scene.scene.children.find(value => value.type === 'LineSegments')); // remove weird mesh next to (0,0,0)
 
         Object.defineProperties(this, {
             pointConfig: { value: pointConfig, enumerable: true },
             viewer: { value: viewer, enumerable: true },
-            pointBudget: {
-                get: function() {
-                    return this.viewer.getPointBudget();
-                },
-                set: function(pb) {
-                    this.viewer.setPointBudget(pb);
-                }
-            },
-            sphereRange: {
-                get: function() {
-                    let geometry = this.currentSphereMesh.geometry;
-                    geometry.computeBoundingSphere();
-                    return geometry.boundingSphere.radius;
-                },
-                set: function(v) {
-                    let sphere = this.currentSphereMesh.geometry;
-                    let currentRadius = sphere.boundingSphere.radius;
-                    currentRadius = 1 / currentRadius;
-                    sphere.scale(currentRadius, currentRadius, currentRadius);
-                    sphere.scale(v, v, v);
-                }
-            },
-            lookAzimuth: {
-                get: function () {
-                    const lookVector = viewer.scene.camera.getWorldDirection();
-                    return THREE.Math.radToDeg(Math.atan2(lookVector.x, lookVector.y));
-                }
-            },
-            onLookAzimuthChange: {
-                value: {
-                    add: function (callback) {
-                        self.addEventListener('cameraRotationChange', callback);
-                    },
-                    remove: function (callback) {
-                        self.removeEventListener('cameraRotationChange', callback);
-                    }
-                }
-            }
         });
     }
 
@@ -349,29 +322,44 @@
             if (profileLoaded) rollbackUI(this.viewer);
             {
                 let config = this.pointConfig;
-
-                let exchangeDictionary = function(base, donor){
-                    Object.keys(base).forEach(function (key) {
-                        delete base[key];
-                    })
-                    Object.entries(donor).forEach(function (entry) {
-                        base[entry[0]] = entry[1];
-                    })
-                };
-                exchangeDictionary(meshDictionary, addOtherPoints.call(this, viewer, config));
+                /*{
+                    const layerInfo = pointProfile.getLayerInfo();
+                    const basePosition = pointProfile.position;
+                    config.pointProfiles.sort(function (item1, item2){
+                        const item1check = item1.belongsToLayer(layerInfo);
+                        const item2check = item2.belongsToLayer(layerInfo);
+                        if (item1check){
+                            if (item2check){
+                                // compare distances
+                                const distance1 = item1.position.distanceToSquared(basePosition);
+                                const distance2 = item2.position.distanceToSquared(basePosition);
+                                return distance1 > distance2;
+                            }
+                            else return -1;
+                        } else {
+                            if (item2check) {
+                                return 1;
+                            } else {
+                                return 0;
+                            }
+                        }
+                    });
+                } // sorting pointConfigs by distance to selected pointConfig position and its layerInfo */
+                exchangeDictionary(meshDictionary, addOtherPoints.call(this, viewer, config, pointProfile.name));
                 const lowQuality360 = this.currentSphereMesh = create360(pointProfile, '1');
                 viewer.scene.scene.add(lowQuality360);
-                const highQuality360 = create360(pointProfile, '3');
-                setTimeout(function (){
+                const onLoad = function (highQuality360){
                     viewer.scene.scene.add(highQuality360);
+                    viewer.scene.scene.remove(self.currentSphereMesh);
                     self.currentSphereMesh = highQuality360;
-                    viewer.scene.scene.remove(lowQuality360);
-                }, 5000); // switch to high quality textures
+                }; // switch to high quality textures
+                create360(pointProfile, '3', onLoad);
+                //create360(pointProfile, '4', onLoad);
                 addPointCloud(pointProfile);
-                this.viewer.scene.view.position = pointProfile.position;
+                this.viewer.scene.view.position.copy(pointProfile.position);
             }
             profileLoaded = true;
-            Potree.utils.setParameter(pointCloudNameQueryParamName, pointProfile.name);
+            Potree.utils.setParameter(queryParamNames.pointCloudName, pointProfile.name);
         },
         setProfileByIndex: function (profileIndex) {
             Validator.validateNumber(profileIndex);
@@ -386,7 +374,7 @@
             this.setProfile(pointProfile);
         },
         getProfileByQuery: function(){
-            let pointCloudName = Potree.utils.getParameterByName(pointCloudNameQueryParamName);
+            let pointCloudName = Potree.utils.getParameterByName(queryParamNames.pointCloudName);
             if (pointCloudName && pointCloudName.length > 0) {
                 for(const profile of this.pointConfig.pointProfiles){
                     if (profile.name === pointCloudName){
@@ -401,8 +389,76 @@
                 pointCloud.material.visible = visibility;
             });
         },
+        toggleVisibilityOtherPoints: function (otherPointsBudget, values) {
+            Validator.validateNumber(otherPointsBudget);
+            Validator.validateArray(values, Validator.validateNumber);
+            const maxDistance = values[values.length - 1];
+            const minDistance = values[0];
+
+            const currentProfile = this.getProfileByQuery();
+            let countOfEnabledPoints = 0;
+            for (const obj of Object.values(meshDictionary)){
+                const object3d = obj.object3d;
+                const pointProfile = obj.pointProfile;
+                const distance = pointProfile.position.distanceTo(currentProfile.position);
+
+                object3d.visible = distance < maxDistance && distance > minDistance && countOfEnabledPoints < otherPointsBudget;
+                if (object3d.visible) countOfEnabledPoints++;
+            }
+
+            this.dispatchEvent({type:'displayedOtherPointsChanged', values, otherPointsBudget});
+        },
     }), {
         currentSphereMesh: { value: null, writable: true, enumerable: true },
+        pointBudget: {
+            get: function() {
+                return this.viewer.getPointBudget();
+            },
+            set: function(pb) {
+                this.viewer.setPointBudget(pb);
+            }
+        },
+        sphereRange: {
+            get: function() {
+                let geometry = this.currentSphereMesh.geometry;
+                geometry.computeBoundingSphere();
+                return geometry.boundingSphere.radius;
+            },
+            set: function(v) {
+                let sphere = this.currentSphereMesh.geometry;
+                let currentRadius = sphere.boundingSphere.radius;
+                currentRadius = 1 / currentRadius;
+                sphere.scale(currentRadius, currentRadius, currentRadius);
+                sphere.scale(v, v, v);
+            }
+        },
+        lookAzimuth: {
+            get: function () {
+                const lookVector = viewer.scene.camera.getWorldDirection();
+                return THREE.Math.radToDeg(Math.atan2(lookVector.x, lookVector.y));
+            }
+        },
+        onLookAzimuthChange: {
+            value: {
+                add: function (callback) {
+                    self.addEventListener('cameraRotationChange', callback);
+                },
+                remove: function (callback) {
+                    self.removeEventListener('cameraRotationChange', callback);
+                }
+            }
+        },
+        countOfOtherPoints: {
+            get: function (){
+                return Object.keys(meshDictionary).length;
+            }
+        },
+        countOfViewedOtherPoints: {
+            get: function () {
+                return Object.values(meshDictionary)
+                    .reduce(function (prev, curr){ return prev + curr.object3d.visible; }, 0)
+            }
+        }
     });
 
     function UIControl(sceneControl){
@@ -424,9 +480,10 @@
         //this.debugDialogBoxSetup();
         this.potreeUISetup();
         this.sphereVisibilityControlSetup();
-        this.spheresVisibilityRangeSliderSetup();
+        this.addRangeSlider();
+        this.addOtherPointsBudgetSlider();
     }
-    UIControl.prototype = Object.assign(Object.create(Object.prototype), {
+    UIControl.prototype = Object.defineProperties(Object.assign(Object.create(Object.prototype), {
         constructor: UIControl,
         pointBudgetSliderSetup: function(){
             $('#pointBudgetSlider').slider({
@@ -468,15 +525,19 @@
             })
             showHideButton.click();
         },
-        /*debugDialogBoxSetup: function () {
-            $('#rightDownPanel').dialog({position:{my: "left bottom", at: "left bottom", of: window }});
+        debugDialogBoxSetup: function () {
+            const div = document.createElement('div');
+            const p1 = document.createElement('p');
+            const p2 = document.createElement('p');
+            div.append(p1, p2);
+            $(div).dialog({position:{my: "left bottom", at: "left bottom", of: window }});
 
             this.sceneControl.addEventListener('ClickNoMove', function (e) {
                 let position = e.position;
-                $('#textOutput>p:first-child').text('x: ' + position.x);
-                $('#textOutput>p:last-child').text('y: ' + position.y);
+                $(p1).text('x: ' + position.x);
+                $(p2).text('y: ' + position.y);
             });
-        },//*/
+        },
         potreeUISetup: function () {
             this.sceneControl.viewer.loadGUI(() => {
                 $('#potree_sidebar_container').hide();
@@ -491,21 +552,71 @@
                 })
             });
         },
-        spheresVisibilityRangeSliderSetup: function () {
-            let sceneControl = this.sceneControl;
-            let rangeDisplayingSpan = $('#sphereRangeRadiusControl>p>span:last-child');
-            let displayRange = function(range){
-                rangeDisplayingSpan.text(range);
+        addRangeSlider: function () {
+            const self = this;
+            const sceneControl = this.sceneControl;
+            const rangeSlider = $('#sphereRangeSlider');
+            const rangeDisplayingSpan = $('#otherPointsRangeControl>p>span:last-child');
+            const setTitle = function(values){
+                rangeDisplayingSpan.text(values[0] + ' - ' + values[1]);
             };
-            $('#sphereRangeSlider').slider({
-                value: sceneControl.sphereRange,
-                min: 0.5,
+            rangeSlider.slider({
+                range: true,
+                values: [0, 150],
+                min: 0.1,
                 max: 150,
                 step: 0.1,
-                slide: function( event, ui ) { sceneControl.sphereRange = ui.value; displayRange(ui.value); }
+                slide: function( event, ui ) {
+                    setTitle(ui.values);
+                    sceneControl.toggleVisibilityOtherPoints(self.otherPointsBudgetSliderValue, ui.values);
+                }
             });
-            displayRange(sceneControl.sphereRange.toFixed(0));
-        }
+            setTitle([0.1, 150]);
+            sceneControl.addEventListener('displayedOtherPointsChanged',
+                function (event){
+                    rangeSlider.slider( "option", "values", event.values );
+                    setTitle(event.values);
+                }
+            );
+        },
+        addOtherPointsBudgetSlider: function () {
+            const self = this;
+            const sceneControl = this.sceneControl;
+            const budgetSlider = $('#otherPointsBudgetSlider');
+            const budgetDisplayingSpan = $('#otherPointsBudgetControl>p>span:last-child');
+            const setTitle = function(value){
+                budgetDisplayingSpan.text(value);
+            };
+            const maxCount = sceneControl.countOfOtherPoints;
+            budgetSlider.slider({
+                value: maxCount,
+                min: 0,
+                max: maxCount,
+                step: 1,
+                slide: function( event, ui ) {
+                    setTitle(ui.value);
+                    sceneControl.toggleVisibilityOtherPoints(ui.value, self.rangeSliderValues);
+                }
+            });
+            setTitle(maxCount);
+            sceneControl.addEventListener('displayedOtherPointsChanged',
+                function (event){
+                    budgetSlider.slider( "option", "value", event.otherPointsBudget );
+                    setTitle(event.otherPointsBudget);
+                }
+            );
+        },
+    }), {
+        rangeSliderValues: {
+            get: function () {
+                return $('#sphereRangeSlider').slider( "option", "values" );
+            }
+        },
+        otherPointsBudgetSliderValue: {
+            get: function () {
+                return $('#otherPointsBudgetSlider').slider( "option", "value" );
+            }
+        },
     });
 
     window.getImageType = getImageType;

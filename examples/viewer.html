@@ -75,12 +75,19 @@
 						<span class="checkmark"></span>
 					</label>
 				</div>
-				<div id="sphereRangeRadiusControl">
+				<div id="otherPointsRangeControl">
 					<p>
-						<span>Spheres visible in range</span>
+						<span>Other points visible in range</span>
 						<span></span>
 					</p>
 					<div id="sphereRangeSlider"></div>
+				</div>
+				<div id="otherPointsBudgetControl">
+					<p>
+						<span>Count of viewed other points</span>
+						<span></span>
+					</p>
+					<div id="otherPointsBudgetSlider"></div>
 				</div>
 				<div id="tools"></div>
 				<div id="showHideButton"></div>
@@ -109,7 +116,7 @@
 			}
 		}
 
-		new UIControl(sceneControl);
+		let uiControl = new UIControl(sceneControl);
 
 		window.viewer = sceneControl.viewer; // potree can't work without it
 	</script>
