@@ -305,7 +305,6 @@
         //viewer.inputHandler.logMessages = true;
         addTouchEventsReflection.call(this, viewer);
         subscribeAndDispatchEvents.call(this, viewer);
-        viewer.scene.scene.remove(viewer.scene.scene.children.find(value => value.type === 'LineSegments')); // remove weird mesh next to (0,0,0)
 
         Object.defineProperties(this, {
             pointConfig: { value: pointConfig, enumerable: true },
@@ -322,7 +321,7 @@
             if (profileLoaded) rollbackUI(this.viewer);
             {
                 let config = this.pointConfig;
-                /*{
+                {
                     const layerInfo = pointProfile.getLayerInfo();
                     const basePosition = pointProfile.position;
                     config.pointProfiles.sort(function (item1, item2){
@@ -333,7 +332,8 @@
                                 // compare distances
                                 const distance1 = item1.position.distanceToSquared(basePosition);
                                 const distance2 = item2.position.distanceToSquared(basePosition);
-                                return distance1 > distance2;
+                                if (distance1 === distance2) return 0; // it's almost impossible
+                                return (distance1 > distance2) ? 1 : -1;
                             }
                             else return -1;
                         } else {
@@ -358,6 +358,7 @@
                 addPointCloud(pointProfile);
                 this.viewer.scene.view.position.copy(pointProfile.position);
             }
+            viewer.scene.scene.remove(viewer.scene.scene.children.find(value => value.type === 'LineSegments')); // remove weird mesh next to (0,0,0)
             profileLoaded = true;
             Potree.utils.setParameter(queryParamNames.pointCloudName, pointProfile.name);
         },
@@ -416,20 +417,6 @@
             },
             set: function(pb) {
                 this.viewer.setPointBudget(pb);
-            }
-        },
-        sphereRange: {
-            get: function() {
-                let geometry = this.currentSphereMesh.geometry;
-                geometry.computeBoundingSphere();
-                return geometry.boundingSphere.radius;
-            },
-            set: function(v) {
-                let sphere = this.currentSphereMesh.geometry;
-                let currentRadius = sphere.boundingSphere.radius;
-                currentRadius = 1 / currentRadius;
-                sphere.scale(currentRadius, currentRadius, currentRadius);
-                sphere.scale(v, v, v);
             }
         },
         lookAzimuth: {
@@ -562,7 +549,7 @@
             };
             rangeSlider.slider({
                 range: true,
-                values: [0, 150],
+                values: [0.1, 150],
                 min: 0.1,
                 max: 150,
                 step: 0.1,

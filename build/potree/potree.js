@@ -10283,7 +10283,7 @@ Potree.Measure = class Measure extends THREE.Object3D{
 					e.viewer.scene.camera, 
 					e.viewer.renderer, 
 					e.viewer.scene.pointclouds);
-				
+				console.info('this is the place where you can change the way the beam is built');
 				if(I){
 					let i = this.spheres.indexOf(e.drag.object);
 					if(i !== -1){
