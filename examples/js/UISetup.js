@@ -374,8 +374,7 @@
             if (!pointProfile) return;
             this.setProfile(pointProfile);
         },
-        getProfileByQuery: function(){
-            let pointCloudName = Potree.utils.getParameterByName(queryParamNames.pointCloudName);
+        getProfileByName: function(pointCloudName) {
             if (pointCloudName && pointCloudName.length > 0) {
                 for(const profile of this.pointConfig.pointProfiles){
                     if (profile.name === pointCloudName){
@@ -384,6 +383,10 @@
                 }
             }
             return null;
+        },
+        getProfileByQuery: function(){
+            let pointCloudName = Potree.utils.getParameterByName(queryParamNames.pointCloudName);
+            return this.getProfileByName(pointCloudName);
         },
         pointCloudSetVisible: function(visibility){
             viewer.scene.pointclouds.forEach(function (pointCloud) {
