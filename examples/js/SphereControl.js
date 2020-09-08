@@ -11,9 +11,8 @@ Potree.OrbitControls = class OrbitControls extends THREE.EventDispatcher{
 
         this.rotationSpeed = 5;
 
-        this.fadeFactor = 10;
-        // this.yawDelta = 0;
-        // this.pitchDelta = 0;
+        this.fadeFactor = 30;
+
         this.rotationUpdateDelta = {yawDelta: 0, pitchDelta: 0};
 
         this.fov = viewer.fov;
@@ -21,8 +20,9 @@ Potree.OrbitControls = class OrbitControls extends THREE.EventDispatcher{
         let dragEventEnabled = true;
 
         let calculateRotation = (panVector) => {
-            let yawDelta = panVector.x / this.renderer.domElement.clientWidth * this.fov  / 150 * this.rotationSpeed;
-            let pitchDelta = panVector.y / this.renderer.domElement.clientHeight * this.fov  / 300 * this.rotationSpeed;
+            const height = this.renderer.domElement.clientHeight;
+            let yawDelta = panVector.x / height * (this.fov  / 180 * Math.PI) * 1.06;
+            let pitchDelta = panVector.y / height * (this.fov  / 180 * Math.PI);
             return {yawDelta, pitchDelta};
         };
 
@@ -71,9 +71,6 @@ Potree.OrbitControls = class OrbitControls extends THREE.EventDispatcher{
 
         let getTouchData = (e) => {
             let touches = Array.prototype.map.call(e.touches, (touch)=>vector2OfTouch(touch));
-            /*if(touches.length === 1){
-                touches = [touches[0], new THREE.Vector2()];
-            }//*/
             if (touches.length > 2){
                 let getFarthestVector = (arrayOfVectors, startVectorIndex) => {
                     if (!Array.isArray(arrayOfVectors) || typeof startVectorIndex !== 'number'){
@@ -134,7 +131,6 @@ Potree.OrbitControls = class OrbitControls extends THREE.EventDispatcher{
         this.addEventListener("drag", drag);
         this.addEventListener("drop", drop);
         this.addEventListener("mousewheel", scroll);
-        //this.addEventListener("dblclick", dblclick);
     }
 
     setScene(scene){
