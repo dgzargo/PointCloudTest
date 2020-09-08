@@ -6,16 +6,16 @@
     width: fit-content;
     background-color: #7f4;
     transition: transform 0.2s;
-    top: 0;
+    bottom: 0;
 }
 #menu.hide{
-    transform: translateY(-100%);
+    transform: translateY(100%);
 }
 
 #showHideButton{
     position: absolute;
     right: 0;
-    top: 100%;
+    bottom: 100%;
 }
 
 #rightDownPanel{

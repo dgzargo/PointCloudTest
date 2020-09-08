@@ -473,7 +473,7 @@
                 let menu = $('#menu');
                 menu.toggleClass('hide');
                 let isHidden = menu.hasClass('hide');
-                showHideButton.button("option", "icon", 'ui-icon-caret-1-'+ (isHidden? 's' : 'n'));
+                showHideButton.button("option", "icon", 'ui-icon-caret-1-'+ (isHidden? 'n' : 's'));
             })
             showHideButton.click();
         },
