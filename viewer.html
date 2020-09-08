@@ -2,7 +2,7 @@
 <html lang="en">
   <head>
     <meta charset="utf-8">
-	<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+	<meta name="viewport" content="target-densitydpi=device-dpi, width=device-width, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0, user-scalable=no, minimal-ui">
     <title>Potree Viewer</title>
 
 	<link rel="stylesheet" type="text/css" href="./build/potree/potree.css">
@@ -11,6 +11,7 @@
 	<link rel="stylesheet" href="./libs/openlayers3/ol.css" type="text/css">
 	<link rel="stylesheet" href="./libs/spectrum/spectrum.css" type="text/css">
 	<link rel="stylesheet" href="./css/styles.css">
+	<link rel="stylesheet" href="../vendors/css/reset.min.css">
   </head>
 
   <body>
@@ -42,7 +43,33 @@
 	<script src="./js/PointConfig.js"></script>
 	<script src="./js/UISetup.js"></script>
 
-    <div class="potree_container" style="position: absolute; width: 100%; height: 100%; left: 0; top: 0; ">
+	<button class="btn btn-back" onclick=returnFn() type="button" id="backButton">
+		<img class="backArrow" src="../assets/img/icons/back_arrow.svg" alt="">
+	</button>
+
+	<a href="javascript:void(0)" id="mapToggle" class="checked">
+		<img class="icon on" src="../assets/img/icons/minimap_grey.svg" style="background-color: rgba(51,153,255,0.9);">
+		<img class="icon off" src="../assets/img/icons/minimap_white.svg">
+		<div id="mapList" class="off" style="z-index: 2;">
+		<div class="mapBtnGroup">
+			<button draggable="true" class="resizeMapBtn" id="resizeMapBtn">
+				<img src="../assets/img/icons/resize-ico.svg" alt="">
+			</button>
+			<button class="centerizeMapBtn mapBtn" id="centerizeMapBtn">
+				<img src="../assets/img/icons/centerize.svg" alt="">
+			</button>
+			<button class="stairsUpBtn mapBtn" id="stairsUpBtn">
+				<img src="../assets/img/icons/stairs_up.svg" alt="">
+			</button>
+			<button class="stairsDownBtn mapBtn" id="stairsDownBtn">
+				<img src="../assets/img/icons/stairs_down.svg" alt="">
+			</button>
+		</div>
+		<div id="wrapper"></div>
+	</div>
+	</a>
+	<div class="potree_container" style="position: absolute; width: 100%; height: 100%; left: 0; top: 0; ">
+
 		<div id="potree_render_area"> </div>
 		<div>
 			<div id="menu">
@@ -100,7 +127,7 @@
 	<script>
 		let profiles = [];
 		const cubeSides = ['r','l','u','d','f','b'].map(function (side) { return side + '.jpg'; });
-		let config = new GeneralPointConfig('../pointclouds', profiles, 'pointcloud/cloud.js', cubeSides, '360');
+		let config = new GeneralPointConfig('./pointclouds', profiles, 'pointcloud/cloud.js', cubeSides, '360');
 		profiles.push(new PointProfile(config, '1', new THREE.Vector3(-44.1870, 57.0310, 27.2240), new THREE.Euler(0,0,-54)));
 		profiles.push(new PointProfile(config, '2', new THREE.Vector3(-45.1440, 57.0160, 27.2290), new THREE.Euler(0,0,38)));
 		profiles.push(new PointProfile(config, '155', new THREE.Vector3(158.97, 233.67, 29.34), new THREE.Euler(2.55,-0.35,-15.55)));
@@ -121,7 +148,27 @@
 
 		window.viewer = sceneControl.viewer; // potree can't work without it
 	</script>
-	
+	<script>
+		const pinButton = document.getElementById('mapToggle');
+		pinButton.children[2].addEventListener('click', function (e){e.stopPropagation();});
+		pinButton.addEventListener('click', function (){
+			pinButton.classList.toggle('enabled');
+			pinButton.children[0].classList.toggle('on');
+			pinButton.children[0].classList.toggle('off');
+			pinButton.children[1].classList.toggle('on');
+			pinButton.children[1].classList.toggle('off');
+			pinButton.children[2].classList.toggle('on');
+			pinButton.children[2].classList.toggle('off');
+		});
+	</script>
 	
   </body>
+  <script src="../vendors/js/d3.js"></script>
+  <script src="../vendors/js/d3-zoom.js"></script>
+  <script src="../vendors/js/d3-transform.min.js"></script>
+  <script src="../shares/js/eventModule.js"></script>
+  <script src="../shares/js/points.js"></script>
+  <script src="../shares/js/sublevels.js"></script>
+  <script src="../shares/js/tail_data.js"></script>
+  <script src="./js/minimap.js"></script>
 </html>

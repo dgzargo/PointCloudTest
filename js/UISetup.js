@@ -4,7 +4,7 @@
         var pin_default = new THREE.TextureLoader().load('pin-black.svg');
         var pin_highlighted = new THREE.TextureLoader().load( "pin-red.svg" );
         var queryParamNames = {
-            pointCloudName: 'pointCloudName',
+            pointCloudName: 'name',
             layer: 'layer',
             sub: 'sub'
         };
