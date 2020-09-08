@@ -1,27 +1,28 @@
 
-function GeneralPointConfig(pointCloudRootPath, arrayOfPointProfiles, imageName, pointCloudPath, cubeSidesPaths, cubeTexturesPath) {
+function GeneralPointConfig(pointCloudRootPath, arrayOfPointProfiles, pointCloudPath, cubeSidesPaths, cubeTexturesPath) {
     Validator.validateString(pointCloudRootPath);
     Validator.validateArray(arrayOfPointProfiles, function(item){Validator.validateInstance(item, PointProfile);});
-    Validator.validateString(imageName);
     Validator.validateString(pointCloudPath);
     Validator.validateArray(cubeSidesPaths, Validator.validateString);
     Validator.validateString(cubeTexturesPath)
 
     this.pointCloudRootPath = pointCloudRootPath;
     this.pointProfiles = arrayOfPointProfiles;
-    this.imageName = imageName;
     this.pointCloudPath = pointCloudPath;
     this.cubeSidesPaths = cubeSidesPaths;
     this.cubeTexturesPath = cubeTexturesPath;
 }
-function PointProfile(generalPointConfig, name, position, z_rotation) {
+function PointProfile(generalPointConfig, name, position, euler360rotation) {
     Validator.validateInstance(generalPointConfig, GeneralPointConfig);
     Validator.validateString(name);
     Validator.validateInstance(position, THREE.Vector3);
+    Validator.validateInstance(euler360rotation, THREE.Euler);
 
     this.name = name;
     this.position = position;
-    this.z_rotation = z_rotation ? z_rotation : 0;
+    this.rotation = euler360rotation;
+
+    euler360rotation.setFromVector3(euler360rotation.toVector3().multiplyScalar(Math.PI).divideScalar(180));
 
     let fullRootPath = function () {
         return generalPointConfig.pointCloudRootPath + '/' + name;
@@ -29,10 +30,6 @@ function PointProfile(generalPointConfig, name, position, z_rotation) {
 
     this.fullPathToPointCloud = function() {
         return fullRootPath() + '/' + generalPointConfig.pointCloudPath;
-    }
-
-    this.fullPathToImage = function() {
-        return fullRootPath() + '/' + generalPointConfig.imageName;
     }
 
     this.fullPathToCubeSides = function (lod) {
@@ -43,13 +40,29 @@ function PointProfile(generalPointConfig, name, position, z_rotation) {
     }
 
     this.belongsToLayer = function (layerInfo) {
-        const {layer, sub} = layerInfo;
-        console.warn('layers and subs haven\'t implemented yet');
-        return true;
+        if (layerInfo.layer === '?' && layerInfo.sub === '?') return true;
+        const actualLayerInfo = this.getLayerInfo();
+        return actualLayerInfo.layer === layerInfo.layer && actualLayerInfo.sub === layerInfo.sub;
     }
 
     this.getLayerInfo = function () {
-        console.warn('layers and subs haven\'t implemented yet');
-        return {layer: '_', sub: '_'};
+        const z = this.position.z;
+
+        if (z === 27.224 || z === 27.229) return { layer: '_', sub: '_' }; // for Conoco points
+        console.info('Conoco specific code here!');
+
+        if (z < 27) {
+            return { layer: 'level_22.8', sub: '_' };
+        }
+        if (z < 35) {
+            return { layer: 'level_27.8', sub: z < 32.7 ? 'sub_0' : 'sub_1' };
+        }
+        if (z < 45) {
+            return { layer: 'level_37.8', sub: '_' };
+        }
+        if (z < 57) {
+            return { layer: 'level_47.8', sub: z < 52.7 ? 'sub_0' : 'sub_1' };
+        }
+        return { layer: 'level_58.0', sub: z < 60 ? 'sub_0' : 'sub_1' };
     }
 }

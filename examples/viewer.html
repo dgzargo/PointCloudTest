@@ -102,12 +102,12 @@
 	<script>
 		let profiles = [];
 		const cubeSides = ['r','l','u','d','f','b'].map(function (side) { return side + '.jpg'; });
-		let config = new GeneralPointConfig('../pointclouds', profiles, '360.' + getImageType(), 'pointcloud/cloud.js', cubeSides, '360');
-		profiles.push(new PointProfile(config, '1', new THREE.Vector3(-44.1870, 57.0310, 27.2240), Math.PI*(-54)/180));
-		profiles.push(new PointProfile(config, '2', new THREE.Vector3(-45.1440, 57.0160, 27.2290), Math.PI*38/180));
-		profiles.push(new PointProfile(config, '155', new THREE.Vector3(158.97, 233.67, 29.34), Math.PI*-16/180));
-		profiles.push(new PointProfile(config, '156', new THREE.Vector3(161.09, 230.81, 29.35), Math.PI*61/180));
-		profiles.push(new PointProfile(config, '189', new THREE.Vector3(160.23, 227, 29.35), Math.PI*(-121)/180));
+		let config = new GeneralPointConfig('../pointclouds', profiles, 'pointcloud/cloud.js', cubeSides, '360');
+		profiles.push(new PointProfile(config, '1', new THREE.Vector3(-44.1870, 57.0310, 27.2240), new THREE.Euler(0,0,-54)));
+		profiles.push(new PointProfile(config, '2', new THREE.Vector3(-45.1440, 57.0160, 27.2290), new THREE.Euler(0,0,38)));
+		profiles.push(new PointProfile(config, '155', new THREE.Vector3(158.97, 233.67, 29.34), new THREE.Euler(2.55,-0.35,-15.55)));
+		profiles.push(new PointProfile(config, '156', new THREE.Vector3(161.09, 230.81, 29.35), new THREE.Euler(1.1,3,61.4)));
+		profiles.push(new PointProfile(config, '189', new THREE.Vector3(160.23, 227, 29.35), new THREE.Euler(-0.4,-1.7,-121.1)));
 
 		let sceneControl = new SceneControl(config);
 		{

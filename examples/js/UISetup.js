@@ -1,7 +1,7 @@
 
 (function (){
     {
-        var pin_default = new THREE.TextureLoader().load( "pin-black.svg" );
+        var pin_default = new THREE.TextureLoader().load('pin-black.svg');
         var pin_highlighted = new THREE.TextureLoader().load( "pin-red.svg" );
         var queryParamNames = {
             pointCloudName: 'pointCloudName',
@@ -20,61 +20,20 @@
         }
     } // utils
     {
-        function getImageType() {
-            let imgtype = Potree.utils.getParameterByName('imagetype');
-            if (!imgtype) imgtype = canUseWebP() ? 'webp' : 'jpg';
-            return imgtype;
-        }
-        function canUseWebP() {
-            var elem = document.createElement('canvas');
-
-            if (!!(elem.getContext && elem.getContext('2d'))) {
-                // was able or not to get WebP representation
-                return elem.toDataURL('image/webp').indexOf('data:image/webp') === 0;
-            }
-
-            // very old browser like IE 8, canvas not supported
-            return false;
-        }
-    } // image type utils
-    {
-        function addOtherPoints(viewer, config, exceptPointName){
+        function addOtherPoints(viewer, config, exceptPointName, requestedLayerInfo){
+            requestedLayerInfo = requestedLayerInfo || {layer:'?',sub:'?'};
             let meshDictionary = {};
-            /*let createSphereMesh = function(geometryParams, material){
-                let {radius, widthSegments, heightSegments} = geometryParams;
-                let geometry = new THREE.SphereBufferGeometry(radius, widthSegments, heightSegments);//new THREE.IcosahedronBufferGeometry(500, 1);
-                return new THREE.Mesh(geometry, material);
-            };
-            config.pointProfiles.filter(function (pointProfile){ return pointProfile.name !== exceptPointName})
-                //.filter(function (pointProfile){ return pointProfile.layer === requestedLayer})
-                .forEach(function (pointProfile) {
-                    let material = new THREE.MeshBasicMaterial( {color: colorMap.default} );
-                    // let lod = new THREE.LOD();
-                    //     lod.autoUpdate = true;
-                    //     lod.addLevel(createSphereMesh({radius:0.3, widthSegments:12, heightSegments:10}, material), 2);
-                    //     lod.addLevel(createSphereMesh({radius:0.3, widthSegments:30, heightSegments:20}, material), 0.5);
-                    //     lod.position.copy(pointProfile.position);
-                    //     viewer.scene.scene.add(lod);
-                    let object3d = createSphereMesh({radius: 0.15, widthSegments: 12, heightSegments: 10}, material);
-                    object3d.position.copy(pointProfile.position);
-                    viewer.scene.scene.add(object3d);
-                    meshDictionary[object3d.uuid] = {pointProfile, object3d};
-                }
-            );//*/
-            {
-                config.pointProfiles
-                    .filter(function (pointProfile){ return pointProfile.name !== exceptPointName})
-                    //.filter(function (pointProfile){ return pointProfile.layer === requestedLayer})
-                    .forEach(function (pointProfile){
-                        //const map = new THREE.TextureLoader().load( "pin-black.svg" );
-                        const material = new THREE.SpriteMaterial( { map: pin_default } );
-                        const sprite = new THREE.Sprite( material );
-                        sprite.scale.set(0.5,0.5,1);
-                        sprite.position.copy(pointProfile.position);
-                        this.viewer.scene.scene.add( sprite );
-                        meshDictionary[sprite.uuid] = {pointProfile, object3d: sprite};
-                    }, this);
-            } // add point of interest as image //*/
+            config.pointProfiles
+                .filter(function (pointProfile){ return pointProfile.name !== exceptPointName})
+                .filter(function (pointProfile){ return pointProfile.belongsToLayer(requestedLayerInfo); })
+                .forEach(function (pointProfile){
+                    const material = new THREE.SpriteMaterial( { map: pin_default } );
+                    const sprite = new THREE.Sprite( material );
+                    sprite.scale.set(0.5,0.7,1);
+                    sprite.position.copy(pointProfile.position);
+                    this.viewer.scene.scene.add( sprite );
+                    meshDictionary[sprite.uuid] = {pointProfile, object3d: sprite};
+                }, this);
             return meshDictionary;
         }
         function addPointCloud(pointProfile) {
@@ -94,10 +53,9 @@
             });
         }
         function create360(pointProfile, lod, callback) {
-            const geometry = new THREE.CubeGeometry(500,500,500);
+            const geometry = new THREE.CubeGeometry(150,150,150);
             geometry.scale( - 1, 1, 1 );
             geometry.rotateX(Math.PI/2);
-            geometry.rotateZ(pointProfile.z_rotation);
             let loaded = 0;
             const textureLoadedCallback = function (){
                 loaded++;
@@ -108,6 +66,7 @@
             });
             const cube = new THREE.Mesh(geometry, cubeMaterials);
             cube.position.copy(pointProfile.position);
+            cube.setRotationFromEuler(pointProfile.rotation);
             return cube;
         }
     } // add scene elements
@@ -345,7 +304,7 @@
                         }
                     });
                 } // sorting pointConfigs by distance to selected pointConfig position and its layerInfo */
-                exchangeDictionary(meshDictionary, addOtherPoints.call(this, viewer, config, pointProfile.name));
+                exchangeDictionary(meshDictionary, addOtherPoints.call(this, viewer, config, pointProfile.name, pointProfile.getLayerInfo()));
                 const lowQuality360 = this.currentSphereMesh = create360(pointProfile, '1');
                 viewer.scene.scene.add(lowQuality360);
                 const onLoad = function (highQuality360){
@@ -354,7 +313,10 @@
                     self.currentSphereMesh = highQuality360;
                 }; // switch to high quality textures
                 create360(pointProfile, '3', onLoad);
-                //create360(pointProfile, '4', onLoad);
+                if (pointProfile.name > 2) {
+                    create360(pointProfile, '4', onLoad);
+                    console.info('Conoco specific code here!');
+                }
                 addPointCloud(pointProfile);
                 this.viewer.scene.view.position.copy(pointProfile.position);
             }
@@ -609,7 +571,6 @@
         },
     });
 
-    window.getImageType = getImageType;
     window.SceneControl = SceneControl;
     window.UIControl = UIControl;
 })();
