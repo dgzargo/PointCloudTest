@@ -1,3 +1,0 @@
-File	    Time	Long Lat	  Alt	    course	    pitch	roll
-Conoco5.jpg	5	-44.1870	  57.0310	  27.2240	    234.3	    0	0
-Conoco5.jpg	5	-34.1870	  57.0310	  27.2240	    234.3	    0	0
