@@ -152,7 +152,7 @@
 		const pinButton = document.getElementById('mapToggle');
 		pinButton.children[2].addEventListener('click', function (e){e.stopPropagation();});
 		pinButton.addEventListener('click', function (){
-			pinButton.classList.toggle('enabled');
+			pinButton.classList.toggle('checked');
 			pinButton.children[0].classList.toggle('on');
 			pinButton.children[0].classList.toggle('off');
 			pinButton.children[1].classList.toggle('on');
