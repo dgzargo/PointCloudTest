@@ -12,6 +12,7 @@
 	<link rel="stylesheet" href="./libs/spectrum/spectrum.css" type="text/css">
 	<link rel="stylesheet" href="./css/styles.css">
 	<link rel="stylesheet" href="../vendors/css/reset.min.css">
+	<link rel="stylesheet" href="../vendors/css/all.min.css">
   </head>
 
   <body>
@@ -43,31 +44,38 @@
 	<script src="./js/PointConfig.js"></script>
 	<script src="./js/UISetup.js"></script>
 
-	<button class="btn btn-back" onclick=returnFn() type="button" id="backButton">
-		<img class="backArrow" src="../assets/img/icons/back_arrow.svg" alt="">
-	</button>
-
-	<a href="javascript:void(0)" id="mapToggle" class="checked">
-		<img class="icon on" src="../assets/img/icons/minimap_grey.svg" style="background-color: rgba(51,153,255,0.9);">
-		<img class="icon off" src="../assets/img/icons/minimap_white.svg">
-		<div id="mapList" class="off" style="z-index: 2;">
-		<div class="mapBtnGroup">
-			<button draggable="true" class="resizeMapBtn" id="resizeMapBtn">
-				<img src="../assets/img/icons/resize-ico.svg" alt="">
-			</button>
-			<button class="centerizeMapBtn mapBtn" id="centerizeMapBtn">
-				<img src="../assets/img/icons/centerize.svg" alt="">
-			</button>
-			<button class="stairsUpBtn mapBtn" id="stairsUpBtn">
-				<img src="../assets/img/icons/stairs_up.svg" alt="">
-			</button>
-			<button class="stairsDownBtn mapBtn" id="stairsDownBtn">
-				<img src="../assets/img/icons/stairs_down.svg" alt="">
-			</button>
+	<header class="top">
+		<div onclick=returnFn() class="button-like">
+			<i class="fas fa-arrow-left"></i>
 		</div>
-		<div id="wrapper"></div>
-	</div>
-	</a>
+
+		<div class="arrows">
+			<a class="left-arrow button-like" id="prev"><i class="fas fa-chevron-left"></i></a>
+			<div class="point-name-display">test text</div>
+			<a class="right-arrow button-like" id="next"><i class="fas fa-chevron-right"></i></a>
+		</div>
+
+		<a id="map-toggle" class="button-like">
+			<i class="fas fa-map-marker-alt"></i>
+			<div id="map-list" style="z-index: 2;">
+				<div class="mapBtnGroup" style="">
+					<button draggable="true" class="resizeMapBtn" id="resizeMapBtn">
+						<img src="../assets/img/icons/resize-ico.svg" alt="">
+					</button>
+					<button class="centerizeMapBtn mapBtn" id="centerizeMapBtn">
+						<img src="../assets/img/icons/centerize.svg" alt="">
+					</button>
+					<button class="stairsUpBtn mapBtn" id="stairsUpBtn">
+						<img src="../assets/img/icons/stairs_up.svg" alt="">
+					</button>
+					<button class="stairsDownBtn mapBtn" id="stairsDownBtn">
+						<img src="../assets/img/icons/stairs_down.svg" alt="">
+					</button>
+				</div>
+				<div id="wrapper"></div>
+			</div>
+		</a>
+	</header>
 	<div class="potree_container" style="position: absolute; width: 100%; height: 100%; left: 0; top: 0; ">
 
 		<div id="potree_render_area"> </div>
@@ -148,19 +156,6 @@
 
 		window.viewer = sceneControl.viewer; // potree can't work without it
 	</script>
-	<script>
-		const pinButton = document.getElementById('mapToggle');
-		pinButton.children[2].addEventListener('click', function (e){e.stopPropagation();});
-		pinButton.addEventListener('click', function (){
-			pinButton.classList.toggle('checked');
-			pinButton.children[0].classList.toggle('on');
-			pinButton.children[0].classList.toggle('off');
-			pinButton.children[1].classList.toggle('on');
-			pinButton.children[1].classList.toggle('off');
-			pinButton.children[2].classList.toggle('on');
-			pinButton.children[2].classList.toggle('off');
-		});
-	</script>
 	
   </body>
   <script src="../vendors/js/d3.js"></script>
@@ -171,4 +166,16 @@
   <script src="../shares/js/sublevels.js"></script>
   <script src="../shares/js/tail_data.js"></script>
   <script src="./js/minimap.js"></script>
+  <script>
+	  const pinButton = document.getElementById('map-toggle');
+	  pinButton.children[1].addEventListener('click', function (e){e.stopPropagation();});
+	  pinButton.addEventListener('click', function (){
+		  pinButton.classList.toggle('enabled');
+	  });
+	  const pointNameDisplay = document.getElementsByClassName('point-name-display')[0];
+	  switchPhoto360Observable.subscribe(function (pointName){
+		  pointNameDisplay.textContent = pointName;
+	  });
+	  switchPhoto360Observable.notify(sceneControl.getProfileByName('155').name);
+  </script>
 </html>
