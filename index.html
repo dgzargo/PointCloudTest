@@ -10,9 +10,9 @@
 	<link rel="stylesheet" type="text/css" href="./libs/perfect-scrollbar/css/perfect-scrollbar.css">
 	<link rel="stylesheet" href="./libs/openlayers3/ol.css" type="text/css">
 	<link rel="stylesheet" href="./libs/spectrum/spectrum.css" type="text/css">
-	<link rel="stylesheet" href="./css/styles.css">
 	<link rel="stylesheet" href="../vendors/css/reset.min.css">
 	<link rel="stylesheet" href="../vendors/css/all.min.css">
+	<link rel="stylesheet" href="./css/styles.css">
   </head>
 
   <body>
@@ -43,6 +43,7 @@
 	<script src="./js/TypeCheck.js"></script>
 	<script src="./js/PointConfig.js"></script>
 	<script src="./js/UISetup.js"></script>
+	<script src="../shares/js/eventModule.js"></script>
 
 	<header class="top">
 		<div onclick=returnFn() class="button-like">
@@ -131,7 +132,7 @@
 			<span id="textOutput"><p></p><p></p></span>
 		</div>-->
     </div>
-	
+
 	<script>
 		let profiles = [];
 		const cubeSides = ['r','l','u','d','f','b'].map(function (side) { return side + '.jpg'; });
@@ -143,25 +144,13 @@
 		profiles.push(new PointProfile(config, '189', new THREE.Vector3(160.23, 227, 29.35), new THREE.Euler(-0.4,-1.7,-121.1)));
 
 		let sceneControl = new SceneControl(config);
-		{
-			let profile = sceneControl.getProfileByQuery();
-			if (profile) {
-				sceneControl.setProfile(profile);
-			} else {
-				sceneControl.setProfile(sceneControl.getProfileByName('155'));
-			}
-		}
-
 		let uiControl = new UIControl(sceneControl);
-
 		window.viewer = sceneControl.viewer; // potree can't work without it
 	</script>
-	
   </body>
   <script src="../vendors/js/d3.js"></script>
   <script src="../vendors/js/d3-zoom.js"></script>
   <script src="../vendors/js/d3-transform.min.js"></script>
-  <script src="../shares/js/eventModule.js"></script>
   <script src="../shares/js/points.js"></script>
   <script src="../shares/js/sublevels.js"></script>
   <script src="../shares/js/tail_data.js"></script>
@@ -172,10 +161,25 @@
 	  pinButton.addEventListener('click', function (){
 		  pinButton.classList.toggle('enabled');
 	  });
+  </script>
+  <script>
 	  const pointNameDisplay = document.getElementsByClassName('point-name-display')[0];
-	  switchPhoto360Observable.subscribe(function (pointName){
-		  pointNameDisplay.textContent = pointName;
+	  switchPhoto360Observable.subscribe(function (pointCloudName){
+		  const profile = sceneControl.getProfileByName(pointCloudName);
+		  if (!profile) {
+			  switchPhoto360Observable.notify(Potree.utils.getParameterByName('name'));
+			  return;
+		  }
+		  sceneControl.setProfile(profile);
+		  pointNameDisplay.textContent = pointCloudName;
+		  Potree.utils.setParameter('name', profile.name);
+		  const layerInfo = profile.getLayerInfo();
+		  Potree.utils.setParameter('level', layerInfo.layer);
+		  Potree.utils.setParameter('sub', layerInfo.sub);
 	  });
-	  switchPhoto360Observable.notify(sceneControl.getProfileByName('155').name);
+	  sceneControl.addEventListener('cameraRotationChange', data=>rotationObservable.notify(data.angle));
+
+	  let profile = sceneControl.getProfileByQuery();
+	  switchPhoto360Observable.notify(profile ? profile.name : profiles[2].name);
   </script>
 </html>

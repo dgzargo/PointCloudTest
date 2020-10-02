@@ -98,7 +98,8 @@
             {
                 this.addEventListener('ClickNoMove', onDocumentMouseDown(viewer, meshDictionary, function (uuid) {
                     this.viewer.scene.removeAllMeasurements();
-                    this.setProfileByMeshUuid(uuid);
+                    const pointProfile = this.getProfileByMeshUuid(uuid);
+                    switchPhoto360Observable.notify(pointProfile.name)
                 }.bind(this)));
 
                 let mouseMoveEventListener = onDocumentMouseDown(viewer, meshDictionary);
@@ -321,27 +322,23 @@
                 this.viewer.scene.view.position.copy(pointProfile.position);
             }
             viewer.scene.scene.remove(viewer.scene.scene.children.find(value => value.type === 'LineSegments')); // remove weird mesh next to (0,0,0)
+            setTimeout(function (){rotationObservable.notify(self.lookAzimuth);}, 2000);
             profileLoaded = true;
-            Potree.utils.setParameter(queryParamNames.pointCloudName, pointProfile.name);
         },
-        setProfileByIndex: function (profileIndex) {
+        getProfileByIndex: function (profileIndex) {
             Validator.validateNumber(profileIndex);
             if (profileIndex >= this.pointConfig.pointProfiles.length) throw 'index out of range of array';
-            let pointProfile = config.pointProfiles[profileIndex];
-            this.setProfile(pointProfile);
+            return config.pointProfiles[profileIndex];
         },
-        setProfileByMeshUuid: function (uuid) {
+        getProfileByMeshUuid: function (uuid) {
             if (!meshDictionary) return;
             let {pointProfile} = meshDictionary[uuid];
-            if (!pointProfile) return;
-            this.setProfile(pointProfile);
+            return pointProfile;
         },
         getProfileByName: function(pointCloudName) {
-            if (pointCloudName && pointCloudName.length > 0) {
-                for(const profile of this.pointConfig.pointProfiles){
-                    if (profile.name === pointCloudName){
-                        return profile;
-                    }
+            for(const profile of this.pointConfig.pointProfiles){
+                if (profile.name == pointCloudName){
+                    return profile;
                 }
             }
             return null;
@@ -387,17 +384,7 @@
         lookAzimuth: {
             get: function () {
                 const lookVector = viewer.scene.camera.getWorldDirection();
-                return THREE.Math.radToDeg(Math.atan2(lookVector.x, lookVector.y));
-            }
-        },
-        onLookAzimuthChange: {
-            value: {
-                add: function (callback) {
-                    self.addEventListener('cameraRotationChange', callback);
-                },
-                remove: function (callback) {
-                    self.removeEventListener('cameraRotationChange', callback);
-                }
+                return Math.atan2(lookVector.x, lookVector.y);
             }
         },
         countOfOtherPoints: {

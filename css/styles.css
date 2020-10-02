@@ -303,7 +303,9 @@ header i{
     width: 3rem;
 }
 .point-name-display{
-    font-size: 2rem;
-    font-family: Arial, sans-serif;
     margin: auto 0;
+    font-size: 2rem;
+}
+body{
+    font-family: Arial, sans-serif;
 }
