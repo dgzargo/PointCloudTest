@@ -290,7 +290,7 @@ function buildSvg() {
     .attr('class', 'end')
     .attr("offset", "100%")
     .attr("stop-color", viewCone.colorStop)
-    .attr("stop-opacity", 0.1);
+    .attr("stop-opacity", 0);
 
     mainLayer = svg.append('g');
     mainLayer
