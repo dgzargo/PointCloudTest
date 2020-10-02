@@ -12,10 +12,12 @@ let tooltip = {
 }
 
 let viewCone = {
-    width: 20,
-    height: 60,
-    color: "orange",
-    opacity: 0.4
+    width: 50,
+    height: 150,
+    colorStart: "#00b359",
+    colorStop: "#0066ff",
+    opacity: 1,
+    initRotateAnge: 180
 }
 
 const mapInit = {
@@ -269,6 +271,27 @@ function buildSvg() {
         .attr('height', '100%')
         .attr('width', '100%');
 
+    let defs = svg.append("defs");
+
+    let gradient = defs.append("linearGradient")
+    .attr("id", "svgGradient")
+    .attr("x1", "0%")
+    .attr("x2", "0%")
+    .attr("y1", "20%")
+    .attr("y2", "100%");
+
+    gradient.append("stop")
+    .attr('class', 'start')
+    .attr("offset", "0%")
+    .attr("stop-color", viewCone.colorStart)
+    .attr("stop-opacity", 0.9);
+
+    gradient.append("stop")
+    .attr('class', 'end')
+    .attr("offset", "100%")
+    .attr("stop-color", viewCone.colorStop)
+    .attr("stop-opacity", 0.1);
+
     mainLayer = svg.append('g');
     mainLayer
         .attr('class', 'mainLayer')
@@ -283,7 +306,7 @@ function buildSvg() {
     floor.attr('class', 'currentFloor');
     floor.on('load', () => {
         drawSet('set');
-        buildViewCone(10);
+        buildViewCone();
     });
     floor.attr('xlink:href', floorSrc);
     mainLayer
@@ -377,23 +400,33 @@ function clickedOnPin(d) {
     switchPhoto360Observable.notify(pointName);
     toolTipFn(d.name);
     deleteSet('svg', '.view');
-    buildViewCone(10)
+    buildViewCone()
 };
 
-function changePinFn(counter) {
-    
+function changePinFn(counter) {    
     let currentPinIndex = pointsOnLevel.findIndex(point => point.name == pointName);
     let nextIndex = currentPinIndex + counter;
     if (nextIndex > pointsOnLevel.length - 1) nextIndex = 0;
     if (nextIndex < 0) nextIndex = pointsOnLevel.length - 1;
     pointName = pointsOnLevel[nextIndex].name;
+    clickNext.notify(pointName);
     switchPhoto360Observable.notify(pointName);
+    
+}
+
+clickNext.subscribe((pointName) => {
+    changeCurrentOnMiniMap(pointName);
+});
+
+function changeCurrentOnMiniMap() {
     let target = svg.select(`._${pointName} circle`).node();
     reDesignAfterClick('fill', 'circle', tooltip.defaultColor, target, tooltip.checkedColor);
     reDesignAfterClick('r', 'circle', tooltip.defaultR, target, tooltip.checkedR);
     deleteSet('svg', '.view');
-    buildViewCone(10);
+    buildViewCone();
 }
+
+
 
 function toolTipFn(id, flag = true) {
     deleteSet('doc', '.tooltip');
@@ -419,42 +452,28 @@ rotationObservable.subscribe((data) => {
 function changeView(angle) {
     let point = pointsOnLevel.find(point => point.name == pointName);
     set
-        .select(`._${point.name}`).select('.view')
-        .attr('transform', `rotate(${angle} ${point.x_img} ${point.y_img})`)
+        .select('.view')
+        .attr('transform', `rotate(${angle + viewCone.initRotateAnge} ${point.x_img} ${point.y_img})`)
 }
 
-// function buildViewCone(angle) {
-//     console.log('some angle', angle)
-//     let point = pointsOnLevel.find(point => point.name == pointName);
-    
-//     set
-//         .select(`._${pointName}`)
-//         .insert('g', 'circle')
-//         .attr('class', 'view')
-//         .append('rect')        
-//         .attr('x', point.x_img - viewCone.width/2)
-//         .attr('y', point.y_img)
-//         //only for test
-//         .attr('transform', `rotate(${angle} ${point.x_img} ${point.y_img})`)        
-//         .attr('width', viewCone.width)
-//         .attr('height', viewCone.height)
-//         .attr('fill', viewCone.color)
-// }
 
-function buildViewCone(angle) {
+
+function buildViewCone(angle = 0) {
     let point = pointsOnLevel.find(point => point.name == pointName);
-    console.log('some angle', angle, point);
 
     if(point) {
+        
+
         set
-            .select(`._${pointName}`)
-            .insert('g', 'circle')
+            .insert('polygon', ':first-child')
+            // .append('polygon')
             .attr('class', 'view')
-            .append('polygon')
-            .attr('opacity', viewCone.opacity)
+            .attr('pointer-events', 'none')
             .attr('points', `${point.x_img},${point.y_img}, ${point.x_img + viewCone.width}, ${point.y_img + viewCone.height}, ${point.x_img - viewCone.width}, ${point.y_img + viewCone.height}`)
             //only for test
-            .attr('transform', `rotate(${angle} ${point.x_img} ${point.y_img})`)
-            .attr('fill', viewCone.color)
+            .attr('transform', `rotate(${angle + viewCone.initRotateAnge} ${point.x_img} ${point.y_img})`)
+            .attr('fill', "url(#svgGradient)")
     }    
 }
+
+//https://github.com/mad1982max/pcpPortal
