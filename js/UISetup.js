@@ -182,21 +182,6 @@
                     });
                 });
             } // mouse events handling
-            {
-                const self = this;
-                viewer.scene.camera.addEventListener('change', function () {
-                    let _angle = null
-                    const eventObj = Object.defineProperties({},{
-                        'angle': {
-                            get: function () {
-                                return _angle !== null ? _angle : _angle = self.lookAzimuth;
-                            }
-                        },
-                        type: { value: 'cameraRotationChange' }
-                    });
-                    self.dispatchEvent(eventObj);
-                })
-            } // camera rotation change
         }
     } // events setup
     {
@@ -278,6 +263,7 @@
             Validator.validateInstance(pointProfile, PointProfile);
             const viewer = this.viewer;
             const self = this;
+            const yaw = viewer.scene.view.yaw;
             if (profileLoaded) rollbackUI(this.viewer);
             {
                 let config = this.pointConfig;
@@ -321,7 +307,23 @@
                 addPointCloud(pointProfile);
                 this.viewer.scene.view.position.copy(pointProfile.position);
             }
+            {
+                viewer.scene.camera.addEventListener('change', function () {
+                    let _angle = null
+                    const eventObj = Object.defineProperties({},{
+                        angle: {
+                            get: function () {
+                                return _angle !== null ? _angle : _angle = self.lookAzimuth;
+                            }
+                        },
+                        type: { value: 'cameraRotationChange' }
+                    });
+                    self.dispatchEvent(eventObj);
+                })
+            } // camera rotation change
             viewer.scene.scene.remove(viewer.scene.scene.children.find(value => value.type === 'LineSegments')); // remove weird mesh next to (0,0,0)
+            viewer.scene.view.pitch = 0;
+            viewer.scene.view.yaw = yaw;
             setTimeout(function (){rotationObservable.notify(self.lookAzimuth);}, 2000);
             profileLoaded = true;
         },

@@ -177,7 +177,9 @@
 		  Potree.utils.setParameter('level', layerInfo.layer);
 		  Potree.utils.setParameter('sub', layerInfo.sub);
 	  });
-	  sceneControl.addEventListener('cameraRotationChange', data=>rotationObservable.notify(data.angle));
+	  sceneControl.addEventListener('cameraRotationChange', function (data) {
+		  return rotationObservable.notify(data.angle);
+	  });
 
 	  let profile = sceneControl.getProfileByQuery();
 	  switchPhoto360Observable.notify(profile ? profile.name : profiles[2].name);
